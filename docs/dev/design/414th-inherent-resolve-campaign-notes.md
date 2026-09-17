@@ -27,7 +27,7 @@ Old City), and every COIN mechanic the fork shipped has a real-world referent he
 | ISIS emirs / named leaders | `coin_hvt` rotating HVT |
 | Ammo/HME caches | `coin_insurgency` cache throttle |
 | Infiltration back through cleared ground | `coin_reinfiltration` + `coin_dispersed_cells` |
-| Standoff fire on forward fields | `vietnam_airbase_harassment` (Q-West) |
+| Standoff fire on forward fields | `coin_harassment` (§36's `vietnam_airbase_harassment` was removed 2026-09-16) |
 | The ratline west to Tal Afar / Syria | `vietnam_convoy_interdiction` |
 | Strategic patience vs. CIVCAS backlash | the inverted `vietnam_political_will` economy |
 

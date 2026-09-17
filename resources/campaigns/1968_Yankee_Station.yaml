@@ -83,8 +83,7 @@ settings:
     vietnamops: true
   # Vietnam Ops period mechanics (era pre-seed). Coastal carrier war -> naval gunfire on.
   # Convoy interdiction models the Ho Chi Minh Trail from the Laotian-panhandle FOBs
-  # (Mu Gia / Ban Karai / Tchepone); airbase harassment presses the forward strips
-  # (FOB Khe Sanh, Da Nang); the Super Gaggle runs resupply into the cut-off FOB.
+  # (Mu Gia / Ban Karai / Tchepone); the Super Gaggle runs resupply into the cut-off FOB.
   vietnam_arc_light: true
   vietnam_flak_gauntlet: true
   vietnam_naval_gunfire: true
@@ -94,7 +93,6 @@ settings:
   # un-escorted column is ground down before it arrives. The spring is authored as native
   # DCS trigger rules at generation, so there is no plugin to preseed.
   convoy_ambush: true
-  vietnam_airbase_harassment: true
   vietnam_super_gaggle: true
   vietnam_fac_marking: true
   vietnam_snake_and_nape: true

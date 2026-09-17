@@ -64,7 +64,6 @@ settings:
   vietnam_flak_gauntlet: true
   vietnam_naval_gunfire: false
   vietnam_convoy_interdiction: true
-  vietnam_airbase_harassment: true
   vietnam_super_gaggle: true
   vietnam_fac_marking: true
   vietnam_snake_and_nape: true

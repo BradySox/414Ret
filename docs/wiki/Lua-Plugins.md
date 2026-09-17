@@ -113,7 +113,7 @@ setting off costs nothing at runtime.
 |---|---|---|
 | `tic` | on | Troops In Contact — formation-keeping frontline units fighting prolonged scripted firefights. (Late-init plugin.) |
 | `coin` | on | The COIN insurgency layer's movers and ambient pressure. Inert unless a COIN campaign. |
-| `vietnamops` | on | The Vietnam Ops suite (Arc Light, flak gauntlet, naval gunfire, convoy interdiction, harassment, Super Gaggle, FAC(A), snake-and-nape) plus the generic frontline-artillery runtime. |
+| `vietnamops` | on | The Vietnam Ops suite (Arc Light, flak gauntlet, naval gunfire, convoy interdiction, Super Gaggle, FAC(A), snake-and-nape). |
 
 ### Naval and carrier
 

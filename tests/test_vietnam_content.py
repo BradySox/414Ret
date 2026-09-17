@@ -192,7 +192,6 @@ _ERA_PRESEED: dict[str, dict[str, bool]] = {
         "vietnam_flak_gauntlet": True,
         "vietnam_naval_gunfire": True,  # coastal
         "vietnam_convoy_interdiction": True,  # the campaign's own Ho Chi Minh Trail
-        "vietnam_airbase_harassment": True,
         "vietnam_super_gaggle": True,
         "vietnam_fac_marking": True,
         "vietnam_snake_and_nape": True,
@@ -203,7 +202,6 @@ _ERA_PRESEED: dict[str, dict[str, bool]] = {
         "vietnam_flak_gauntlet": True,
         "vietnam_naval_gunfire": False,
         "vietnam_convoy_interdiction": True,
-        "vietnam_airbase_harassment": True,
         "vietnam_super_gaggle": True,
         "vietnam_fac_marking": True,
         "vietnam_snake_and_nape": True,

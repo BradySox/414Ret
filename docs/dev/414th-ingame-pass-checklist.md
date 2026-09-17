@@ -153,7 +153,7 @@ no evidence either way after 33 missions.
 
 ## Outstanding rows at a glance
 
-77 rows need a live pass. Full detail is under each `###` heading below —
+76 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -217,7 +217,7 @@ stress it · `✗` fail signature reproduced in-game.
 | K2 | Campaign SITREP band on its own kneeboard page | §29 | ☑ |
 | L5 | New-Game "Vietnam" card | Vietnam mode P2 shell | ◐ |
 | L6 | Convoy interdiction (Steel Tiger) | §35 | ◐ |
-| L8 | Airbase harassment (rocket/mortar siege) | §36 | ✗ |
+| L8 | Airbase harassment (rocket/mortar siege) | §36 | ✅ |
 | L9 | Super Gaggle hilltop resupply | §37 | ◐ |
 | L11 | Snake and nape (napalm CAS) | §39 | ◐ |
 | M6 | Red tempo: turn-windowed trail surge, ground-offensive pulse (campaign layer W6, rehomed 2026-07-21) | campaign layer | ☐ |
@@ -3709,7 +3709,12 @@ be settled from a recording instead of the cockpit. It can, across all six recor
   `useOpenNewSupplyRoutePackageDialogMutation` hook or the `contextmenu` handler is wrong); a JS error in the
   client console; the dialog opens on the wrong CP. Needs the CI client rebuild (hand-edited generated API).
 
-### L8 — Airbase harassment (rocket/mortar siege) · §36 · ✗ REGRESSED (2026-09-16, test 34)
+### L8 — Airbase harassment (rocket/mortar siege) · §36 · ✅ CLOSED (feature removed 2026-09-16) (was ✗ REGRESSED
+
+**Removed on the DM's call the same day the test-34 read below landed.** The barrage grounded
+every AI fixed-wing launch at the field it shelled; the two settings, the plugin options, the
+emitter, the Lua block and the preseeds are gone. Nothing to fly. The paragraphs below are the
+evidence, kept.
 
 **2026-09-16, test 34** (Caucasus — 1968 Yankee Station turn 1 on the halved laydown, 62 min, no player, `Tacview-20260916-204511`, DCS 2.9.29.27468) — **the barrage freezes every AI fixed-wing launch at the field it lands on, for the rest of the mission.** Harassment armed for 8 fields, Maykop-Khanskaya and Sochi-Adler among them (the Vietnam siege reach is theatre-wide, and with no player nothing was excluded). At Maykop the Phantom pair that activated at t=341 taxied and flew; CATFISH BAI (t=1334), ALBATROSS Strike (three B-52s, t=1385), ALBATROSS Escort (t=1466) and PUFFIN Strike (t=1733) activated hot and never moved a metre in the 33–40 minutes left. At Sochi-Adler the two groups activated before t=200 flew and the two after (ANTELOPE BAI at t=553, the OV-10 CAS at t=727) sat. Mineralnye Vody and Krymsk, not in the list, launched everything (t=653, 1280, 1295, 1599). The first barrage lands at grace 300 s plus 120–360 s, which is exactly where the taxiing stops. Nothing else was near either ramp: no ground unit within 3 km, no weapon object (the barrage leaves none, as this row already notes). The same shape holds in every earlier mission with harassment armed: test 33 (Damascus harassed: the H-6J strike at t=1369 and the CAS at t=2680 sat, while Tiyas launched flights at t=5064), test 24 (Batumi harassed: both F-15C BARCAPs at t=1080 and 1136 sat, Tbilisi's t=72–319 flights got out before the grace) and test 31 (Anapa harassed: the t=629 package sat, the t=161–168 ones flew). Helicopters at harassed fields still lift (Gudauta's Mi-8 BAI at t=924, test 34): they need no taxi clearance, which points at DCS holding ground traffic on a field under attack and the four-minute cadence never letting it clear. Ten fixed-wing groups across four missions, zero counter-examples. This is the feature's cost, not its cue: on Yankee Station it grounds the Ubon wing and the Da Nang wing after the first ten minutes. Fix is a design call (shell only fields with no planned fixed-wing departures, or make the barrage visual), not made in this read.
 

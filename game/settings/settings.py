@@ -584,13 +584,11 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 ],
             ),
             (
-                # In-mission life on the ground: cosmetic siege damage and
-                # indirect fire on forward strips.
+                # In-mission life on the ground: cosmetic siege damage, traffic
+                # and the convoy war.
                 "Battlefield life",
                 [
                     "base_battle_damage",
-                    "artillery_base_harassment",
-                    "artillery_harassment_reach_km",
                     "civilian_air_traffic",
                     "ambient_supply_convoys",
                     "convoy_ambush",
@@ -674,7 +672,6 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
                 [
                     "vietnam_flak_gauntlet",
                     "vietnam_convoy_interdiction",
-                    "vietnam_airbase_harassment",
                     "vietnam_super_gaggle",
                     "vietnam_fac_marking",
                 ],
@@ -737,7 +734,6 @@ FEATURE_GATE_FIELDS: dict[str, list[str]] = {
     "Battlefield life": [
         "ambient_supply_convoys",  # §50
         "convoy_ambush",  # §50
-        "artillery_base_harassment",  # §36
         "motorpool_enabled",  # §56
         "mission_briefing_popup",  # §58
         "neutral_border_defense",  # §98
@@ -3136,40 +3132,6 @@ class Settings:
         ),
         default=True,
     )
-    artillery_base_harassment: bool = boolean_option(
-        "Frontline artillery harassment on forward airbases",
-        page=MISSION_GENERATION_PAGE,
-        section=GENERAL_SECTION,
-        default=False,
-        detail=(
-            "Airfields and FARPs within enemy tube/rocket artillery reach of a front "
-            "line (~20 NM) draw sporadic standoff harassment fire during the mission "
-            "-- a FARP sitting on the FLOT is a base under fire, not a safe ramp. "
-            "Symmetric (both sides' forward fields). Mostly noise and smoke with a "
-            "modest bite; never targets a field a player spawns at or recovers to, "
-            "and a startup grace period protects a cold-starting player. Runs via "
-            "the 'Vietnam Ops & standoff harassment' LUA plugin -- keep that plugin "
-            "enabled or this setting does nothing. (The Vietnam Ops siege toggle is "
-            "this same runtime with theater-wide reach.)"
-        ),
-    )
-    artillery_harassment_reach_km: int = bounded_int_option(
-        "Frontline artillery harassment reach (km)",
-        enabled_when="artillery_base_harassment",
-        page=MISSION_GENERATION_PAGE,
-        section=GENERAL_SECTION,
-        default=35,
-        min=10,
-        max=120,
-        detail=(
-            "How near a front line an occupied airfield or FARP must be to draw "
-            "frontline artillery harassment. The default 35 km is real tube/rocket "
-            "reach off the FLOT; raise it for long-range MRLs (or a laydown whose "
-            "forward fields sit a little farther back). Only used when 'Frontline "
-            "artillery harassment on forward airbases' is on; the Vietnam Ops siege "
-            "toggle keeps its own theater-wide reach."
-        ),
-    )
     dtc_data_cartridges: bool = boolean_option(
         "Pre-load DTC data cartridges (F/A-18C, F-16C, F-14B(U))",
         page=MISSION_GENERATION_PAGE,
@@ -3531,19 +3493,6 @@ class Settings:
             "Armed Recon missions over enemy road corridors find a moving supply convoy that "
             "scatters and hides when hunted; destroying it dents enemy logistics. Models Ho "
             "Chi Minh Trail / Steel Tiger interdiction."
-        ),
-        default=False,
-    )
-    vietnam_airbase_harassment: bool = boolean_option(
-        "Airbase harassment (rocket/mortar siege)",
-        VIETNAM_OPS_PAGE,
-        "Battlefield & interdiction",
-        detail=(
-            "Forward, occupied airfields draw sporadic standoff rocket/mortar fire near the "
-            "ramp -- the near-constant siege of Bien Hoa/Da Nang/Khe Sanh -- so the rear "
-            "isn't a safe area. Your own active spawn fields are never targeted, and a "
-            "startup grace period protects a cold-starting player. Mostly atmospheric with a "
-            "modest, tunable bite."
         ),
         default=False,
     )

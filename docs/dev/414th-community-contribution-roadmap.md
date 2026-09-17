@@ -205,7 +205,7 @@ The original five (SCAR/TARS/TIC/QRA/C-130J) plus, from §29–§73:
 
 | Feature | Value | Note |
 |---|---|---|
-| Vietnam Ops suite (§32–§39: Arc Light, flak, NGFS, harassment, gaggle, FAC, snake-nape) | High | One plugin, per-feature toggles already default-OFF |
+| Vietnam Ops suite (§32–§39: Arc Light, flak, NGFS, gaggle, FAC, snake-nape; §36 harassment removed 2026-09-16) | High | One plugin, per-feature toggles already default-OFF |
 | §49 mobile missile relocation (SCUD hunt) | High | S2 flown ✓; fire-window + stagger hardened |
 | §50 convoy ambush + ambient convoys | High | engine side Tier 1; plugin side here |
 | §51 comms jamming / §70 C1–C2 red net | Medium/High | pair them — one comms-war story |

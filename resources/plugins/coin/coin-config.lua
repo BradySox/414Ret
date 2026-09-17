@@ -10,7 +10,8 @@
 -- Plus one ambient-pressure layer:
 --   * insurgent indirect fire -- friendly bases inside a stronghold's mortar reach (emitted by
 --     Python, never a player-spawn field, double-guarded here) draw sporadic small barrages
---     after a startup grace (the vietnamops airbase-harassment shape).
+--     after a startup grace. FOBs and helicopter fields only in practice: a scripted
+--     explosion on a fixed-wing field holds that field's AI launches (why §36 was removed).
 --
 -- Movement + cosmetics ONLY. The kill / fuse consequence lives in the campaign's turn logic (a
 -- mover shot down is recorded natively, like any other unit; the harassment fire changes no force

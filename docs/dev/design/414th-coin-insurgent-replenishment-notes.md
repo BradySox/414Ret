@@ -201,8 +201,8 @@ shows it's needed (per the generalization note §6).
   each becomes a real ammo TGO via the miz-loader sentinel →
   `generate_ammunition_depots`). The YAML restores a small real income (250 / 0.25 —
   the original zeroed it), preseeds the full stack (`coin_insurgency`,
-  `vietnam_political_will`, `vietnam_convoy_interdiction`,
-  `vietnam_airbase_harassment`), authors the inverted `will:` profile ("The
+  `vietnam_political_will`, `vietnam_convoy_interdiction`; the
+  `vietnam_airbase_harassment` preseed went with §36's removal on 2026-09-16), authors the inverted `will:` profile ("The
   Coalition's mandate" vs "the insurgency's momentum"; `red_cache_lost` 4.0,
   `red_ground_unit_lost` 0.05, `blue_passive_regen` 0.0) and the
   **Disrupt → Clear and Hold → Break the Momentum** arc (will-coupled advances,

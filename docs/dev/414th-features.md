@@ -4384,96 +4384,27 @@ whose longest ring is 8 NM or more gets a 12 NM zone. In-game pass owed: **B123*
   convoy is nudged that turn (the engine's organic transfers may still produce one). Guaranteeing a target
   every single turn regardless of the enemy's stock is a possible refinement.
 
-## §36 — Airbase harassment (rocket/mortar siege) (Vietnam Ops suite)
+## §36 — Airbase harassment (rocket/mortar siege) (Vietnam Ops suite) — REMOVED 2026-09-16
 
-The fifth **Vietnam Ops suite** feature (design note `414th-vietnam-airbase-harassment-notes.md`, §F). The
-Vietnam air war was fought as much *on the ground at the airbase* as in the air — Bien Hoa, Tan Son Nhut,
-Da Nang, Chu Lai, and the Khe Sanh strip were under near-constant 122 mm rocket / 82 mm mortar / sapper
-standoff attack for years. None of that exists in the base engine: an occupied airbase is a perfectly safe
-rear area until the FLOT reaches it. This makes the forward strips feel contested — the missing other half of
-the "the rear isn't safe" picture that §33 (flak over the *target*) started.
+**Removed on the DM's call ("drop the feature").** The barrage did what a barrage does to a
+DCS airfield: it put the field into its under-attack state, and every AI fixed-wing launch at
+that field was held on the ramp for the rest of the mission, because the four-minute cadence
+never let the state clear. Measured on test 34 (Yankee Station: Maykop's two Phantom pairs and
+four B-52s, Da Nang's Skyraider BAI and OV-10 CAS, all activated after the first barrage and
+never moved; the pair that activated before it flew; the un-shelled fields launched everything)
+and the same signature on tests 24 (Batumi), 31 (Anapa) and 33 (Damascus): ten fixed-wing groups
+across four missions, zero counter-examples. Helicopters at shelled fields still lifted, which is
+the tell (they need no taxi clearance). The generic `artillery_base_harassment` mode, the same
+runtime with a 35–42 km reach, went with it, as did the two settings, the six plugin options,
+the emitter, the Lua block, the Red Tide / Baltic Fury / Vietnam / COIN preseeds and the design
+note. The COIN insurgent indirect fire (`coin_harassment`, §-less, `coin` plugin) is a separate
+emitter and stays; it shells FOBs and helicopter fields, where the hold does not bite, and Balad
+on Inherent Resolve is the one fixed-wing field it can reach. Checklist L8 is closed.
 
-### How it works
-
-**Python picks the eligible fields (`vietnamopsluadata.py` `_populate_airbase_harassment`).** For every land
-airfield/FARP control point it keeps only those that are:
-
-- **an airfield or FARP** (`HARASSABLE_CP_TYPES = {AIRBASE, FARP}`) — carriers/LHAs (their own control-point
-  types) and ground-only FOBs are skipped; the siege modelled here is fire on a land ramp,
-- **occupied** (`not cp.captured.is_neutral`),
-- **forward** — within `HARASSMENT_FRONT_REACH_M` (≈ 200 km) of a front (`game.theater.conflicts()`), so a
-  deep-rear field is never shelled; **no front ⇒ no node ⇒ the plugin no-ops** (forward-only by construction,
-  the same posture as NGFS's gun-range gate), and
-- **not a player-spawn field this mission** — the departure, arrival, or divert of any client flight, from
-  `_client_spawn_control_points` (mirrors the `cull_farp_statics` walk in `tgogenerator.py`). This is the #1
-  anti-grief guarantee: it is enforced **in Python** (an excluded field never enters the emitted `fields`
-  list), and the exclude set is *also* emitted under `excludedFields` as a cheap Lua-side double-guard.
-
-It emits `dcsRetribution.VietnamOps.airbaseHarassment = { fields = { {name,x,y,coalition}, … }, excludedFields
-= { … } }` (the coalition is the field's owner, for the "incoming" cue and symmetry).
-
-**The `vietnamops` plugin runs the siege at runtime** (vanilla DCS `trigger.action.explosion`, `pcall`-guarded):
-- One scheduled loop per emitted field. The **first** event fires only after a **startup grace period**
-  (default 300 s) so nobody is shelled mid-alignment, then repeats on a **randomized cadence** (default ~240 s
-  ± 50 %) — historical harassment was sporadic, not a metronome.
-- Each event lands a short **barrage** (default 5 impacts, walked 0.4 s apart) scattered uniformly over a
-  **dispersion disc** (default 260 m) around the parking centroid, at a small **per-impact power** (default 8)
-  — mostly noise/smoke with a modest, tunable bite. A direct hit on a parked static is a bonus, not the goal.
-- A defensive Lua re-check skips any field whose name is in `excludedFields` (belt-and-suspenders over the
-  Python filter), and announces "Incoming — standoff fire on <field>" to the owning coalition.
-- Tunables (plugin `specificOptions`): interval, rounds/event, dispersion radius (ft, `harassDispersionFt` —
-  imperial-unit options since 2026-07-01), per-blast power, grace.
-
-### Files & tests
-
-| Area | Path |
-|---|---|
-| Emitter | `game/missiongenerator/vietnamopsluadata.py` (`_populate_airbase_harassment`, `_client_spawn_control_points`, `HARASSABLE_CP_TYPES`, `HARASSMENT_FRONT_REACH_M`) |
-| Runtime | `resources/plugins/vietnamops/vietnamops-config.lua` (airbase-harassment section) |
-| Setting / options | `game/settings/settings.py` (`vietnam_airbase_harassment`); plugin `specificOptions` (interval/rounds/dispersion/power/grace) |
-| Tests | `game/missiongenerator/tests/test_vietnamops_luadata.py` (forward occupied field emitted; rear / neutral / carrier / off / no-front → no node; a lone client-spawn field yields no node; a client-spawn field is excluded from targets but listed under `excludedFields`) |
-
-### Gotchas / deferred
-
-- **Never grief the cold-starting player.** The player-spawn exclusion + the startup grace period are **hard
-  requirements**, not options (design note "critical design tension"). The Python filter is authoritative; the
-  Lua exclude re-check and grace period are additional layers. The #1 in-game fail signature is any impact on
-  or near a client-spawn field — watch for it on the pass (checklist L8).
-- **Runtime is unflown (checklist L8).** The Lua passes the `luac5.1 -p` syntax gate but the scheduled loop,
-  the explosion placement, and the grace/cadence timing can't be exercised headless — it needs a cockpit pass.
-  Tune power/dispersion down if it reads as too lethal (as §33 flak did on its first audience pass).
-- **Symmetric but forward-gated.** Both sides' forward fields qualify; a theater with no contested field near a
-  front emits nothing. Optional low-rate harassment of the player's *own* forward strips (accepting the grief
-  risk for immersion) was deliberately deferred — v1 excludes every player-spawn field unconditionally.
-- **Runtime-cosmetic only.** Destroyed parking statics are runtime damage (like §33/§34); there is no BDA
-  feedback into the campaign model.
-
-### The generic artillery mode (`artillery_base_harassment`, added 2026-07-05)
-
-The same emitter + runtime, opened to conventional campaigns: a new **`artillery_base_harassment`**
-setting (Mission Generation → World & systems, default OFF) drives `_populate_airbase_harassment`
-with a reach defaulting to **`ARTILLERY_FRONT_REACH_M`** (≈ 35 km — real tube/rocket range off the
-FLOT) instead of the Vietnam siege's theater-wide 200 km, so only a field genuinely *on* the front
-sits under fire. When both toggles are on the wider Vietnam reach wins. **The reach is campaign-tunable**
-(2026-07-10) via the **`artillery_harassment_reach_km`** setting (Mission Generation → Battlefield life,
-default 35, `enabled_when=artillery_base_harassment`); the emitter reads `settings.artillery_harassment_reach_km
-* 1000` for the generic mode. **Red Tide preseeds it at 42 km** — the flown 2026-07-10 turn-1 test found the
-default 35 km left **both** the Fulda forward FARP (~39.3 km off the turn-0 Fulda↔Haina front) and red's
-Haina spearhead (~39.6 km) just *outside* reach, so nothing was shelled on a fresh game (`VietnamOps = {}`);
-42 km (WP BM-27 Uragan MRLs reach ~35 km, so period-honest) brings both under sporadic artillery harassment
-from turn 1 — "the Gap is not a safe ramp". Every §36 guarantee carries over unchanged (player-spawn
-exclusion, grace, forward-only, symmetric). The emitted node stays `VietnamOps.airbaseHarassment`
-(the `vietnamops` plugin owns the runtime; its non-harassment sections stay gated off).
-**Plugin dependency (user-caught 2026-07-05):** the setting is dead if the *vietnamops plugin* is
-disabled — and a conventional-campaign player has every reason to have unticked "Vietnam Ops" in
-their saved defaults. **Red Tide therefore preseeds `plugins: {vietnamops: true}`** in its campaign
-`settings:` block (the wizard layers campaign plugins over the player's saved defaults — the same
-recommended-default mechanism as every other preseed; still uncheckable in the wizard); the plugin
-is renamed "Vietnam Ops **& standoff harassment**" and both its description and the setting's
-detail state the coupling. Guard: `tests/fourteenth/test_campaign_plugin_preseed.py` (the preseed
-exists, survives `deserialize_state_dict`, and wins the wizard layering). Tests:
-`tests/missiongenerator/test_vietnamops_harassment.py` (reach + gates). In-game pass: the L8 row's
-artillery bullet.
+What is worth keeping from it: the never-a-player-spawn-field exclusion walk
+(`ato.packages → flights → departure/arrival/divert`) lives on in `coinluadata.py`, and the
+lesson that a scripted explosion on an airfield is a mission-long ground stop for that field's
+AI is now a hard constraint in CLAUDE.md.
 
 ## §37 — Super Gaggle hilltop resupply (Vietnam Ops suite)
 

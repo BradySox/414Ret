@@ -224,11 +224,13 @@ Enduring Resolve (COIN)"*, 5+ turns. The experiment that proves the loop:
   (`coin_harassment`, default OFF, preseeded ON in both COIN campaigns) -- blue
   airfields/FARPs/FOBs within `HARASS_STRONGHOLD_REACH_M` (40 km,
   `coinluadata.py`) of a red stronghold draw sporadic small rocket/mortar barrages
-  after a startup grace, the vietnamops §36 shape with the same hard
+  after a startup grace, the shape §36 used before its 2026-09-16 removal, with the same hard
   never-a-player-spawn-field guarantee (emitter filter + `excludedBases` Lua
   double-guard). Stronghold-proximity based, NOT front based -- so it works on the
-  front-less Enduring Resolve laydown where the preseeded `vietnam_airbase_harassment`
-  silently no-ops (kept on Inherent Resolve, where the two complement). Cosmetic
+  front-less Enduring Resolve laydown. §36 itself was removed 2026-09-16 because its
+  barrage held every AI fixed-wing launch at the field it shelled; this variant shells FOBs
+  and helicopter fields, where that does not bite, but Balad on Inherent Resolve is a
+  fixed-wing field inside its reach and is the thing to watch. Cosmetic
   pressure only; clearing strongholds silences the fire. **(2) cell movers** -- C4
   dispersed cells wander a small loop of their patch (`cells`), the live C1.5
   re-infiltration cell creeps toward the base it is taking (`infiltrators`), through

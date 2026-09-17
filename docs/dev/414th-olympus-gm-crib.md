@@ -86,7 +86,7 @@ deliberately accept the fight:
   closes ~15 NM or they take a hit — an Olympus order to a slept group does nothing
   until then. For GM-heavy events, either leave `perf_ground_ai_sleep` off or wake
   groups by flying something near them.
-- **Anti-grief guarantees bound the automation, not you.** §36 harassment can never
+- **Anti-grief guarantees bound the automation, not you.** the COIN insurgent fire can never
   shell a player ramp; *you* can. Know that you're outside the guardrails.
 - **Mod units**: Olympus spawns vanilla + whatever mods it's configured for; the fork's
   mod fleet (HDS etc.) needs Olympus-side configuration **[verify at install]**.

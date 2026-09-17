@@ -452,7 +452,6 @@ def test_enduring_resolve_campaign_definition() -> None:
     for key in (
         "coin_insurgency",
         "vietnam_convoy_interdiction",
-        "vietnam_airbase_harassment",
         "high_digit_sams",  # the faction's ERO technicals are HDS content
     ):
         assert data["settings"][key] is True, key

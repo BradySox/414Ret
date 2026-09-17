@@ -174,16 +174,6 @@ settings:
   # 20; raised so airfield attack becomes a human-chosen objective, not AI busywork
   # (red squadrons are 4-8 jets, so most fields now fall below this threshold).
   oca_target_autoplanner_min_aircraft_count: 40
-  # Frontline artillery: fields within tube/rocket reach (~20 NM) of the Fulda<->Haina
-  # front -- the Fulda forward FARP, and red's Haina spearhead -- draw sporadic
-  # in-mission standoff harassment fire (never a player-spawn field; startup grace).
-  # The Gap is not a safe ramp.
-  artillery_base_harassment: true
-  # Reach bumped 35 -> 42 km: at turn 0 the Fulda<->Haina front sits ~39 km from BOTH
-  # Fulda (the forward FARP) and Haina (red's spearhead), just past the 35 km default,
-  # so neither field was shelled on a fresh game. 42 km puts both under fire from turn 1
-  # (WP BM-27 Uragan MRLs reach ~35 km, so a ~42 km harassment envelope is period-honest).
-  artillery_harassment_reach_km: 42
   # Front-line ground density (diagnosed 2026-08-02 from the flown M2 Tacview): red's Haina
   # maneuver force generated near-empty. Two compounding causes -- (1) Haina's deployable-unit
   # CAP is only the 15-unit floor because NO ammo depot is bound to the front CPs (Red Tide's
@@ -199,8 +189,7 @@ settings:
   frontline_reserves_factor_red: 85
   # §50 convoy escort/ambush -- friendly NATO supply convoys run the rear roads up to the
   # Fulda front and concealed Spetsnaz/recon-team ambushes dig in along the route; fly
-  # CAS/BAI escort or the column is ground down. The rear isn't a safe road, same as the
-  # ramp isn't a safe ramp (artillery harassment above).
+  # CAS/BAI escort or the column is ground down. The rear isn't a safe road.
   convoy_ambush: true
   # Civilian air traffic stays ON (squadron call 2026-07-12, reversing the first M1
   # tuning cut): a neutral IL-76 at FL230 DID die to a deep player Phoenix shot in M1

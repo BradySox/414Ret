@@ -28,6 +28,11 @@ P2 (shell/preset) + P3 (behaviour taskings) outstanding.
 
 ## Implementation progress
 
+- **2026-09-16 — §36 airbase harassment REMOVED (DM call, "drop the feature").** Test 34
+  showed the barrage holding every AI fixed-wing launch at Maykop and Da Nang for the rest of
+  the mission (DCS's under-attack state, never clearing under a four-minute cadence); tests 24,
+  31 and 33 carried the same signature. The generic artillery mode went with it. The suite is
+  seven mechanics now; the design note was deleted and the constraint lifted into CLAUDE.md.
 - **2026-09-16 — Yankee Station blue laydown halved, and helicopters off Armed Recon (DM
   calls, from a headless read of the DM's turn-1 save).** 116 blue airframes produced 31 blue
   packages against a 60-minute mission, 15 of 36 timed past its end; the DM called it

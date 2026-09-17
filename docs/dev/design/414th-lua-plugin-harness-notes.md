@@ -32,9 +32,8 @@ so testing on the wrong dialect would pass code DCS rejects, and vice versa):
   advances the virtual clock, and returns the recorded activity for assertions.
 - **`test_vietnamops_runtime.py`** — the first consumer: the data-presence gates, Arc Light
   (release range, one-shot, dead-bomber-never-fires, malformed-record degradation), the flak
-  envelope (in-range bursts near-but-never-on the aircraft, ceiling safety, no-guns no-op),
-  and airbase harassment (grace period, ramp dispersion, and the **`excludedFields`
-  player-field double-guard** — the anti-grief guarantee, now CI-locked).
+  envelope (in-range bursts near-but-never-on the aircraft, ceiling safety, no-guns no-op).
+  The airbase-harassment cases went with §36's removal on 2026-09-16.
 
 Sabotage-verified at build time: deleting the excluded-field guard and typo-ing
 `trigger.action.explosion` inside a timer tick both turn the suite red.

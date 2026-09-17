@@ -101,7 +101,7 @@ Full detail: [Air Defense and the Air War](Air-Defense-and-the-Air-War).
   COIN model (an insurgency that regenerates from ammo
   caches, re-infiltrates cleared ground, and hides among the population).
 - [Vietnam Ops](Vietnam-Ops) adds the era's mission-level mechanics — Arc Light, flak gauntlet,
-  naval gunfire, trail interdiction, airbase harassment, Super Gaggle, FAC(A) marking, snake and
+  naval gunfire, trail interdiction, Super Gaggle, FAC(A) marking, snake and
   nape. All opt-in, preseeded by the era campaigns.
 - **Long-range carrier ops** put a standoff carrier in the war: a deterministic package (strike
   + buddy tanker + E-2) off the boat's own squadrons, with carrier flights routed to tank from

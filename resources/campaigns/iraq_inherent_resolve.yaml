@@ -39,10 +39,10 @@ recommended_enemy_money: 250
 recommended_enemy_income_multiplier: 0.25
 version: "10.8"
 settings:
-  # FOB standoff fire (vietnam_airbase_harassment, below) runs on the `vietnamops`
-  # Lua plugin, and a host whose saved plugin defaults have it unticked loses it with
-  # no log line (the §36 lesson). The plugin ships defaultValue: true, but a campaign
-  # preseed is what overrides a saved default.
+  # The Vietnam Ops mechanics below run on the `vietnamops` Lua plugin, and a host
+  # whose saved plugin defaults have it unticked loses them with no log line (the §36
+  # lesson). The plugin ships defaultValue: true, but a campaign preseed is what
+  # overrides a saved default.
   plugins:
     vietnamops: true
   squadron_start_full: true
@@ -66,22 +66,19 @@ settings:
   coin_dispersed_cells: true
   # Insurgent indirect fire: blue airfields/FARPs/FOBs within mortar reach of a live
   # stronghold draw sporadic in-mission rocket/mortar harassment (never a player-spawn
-  # field). Complements the front-based Vietnam toggle below (which covers Balad near
-  # the Highway-1 front); this one keys off stronghold proximity and covers FOBs.
+  # field). Keys off stronghold proximity and covers the FOBs.
   coin_harassment: true
   # The fighting is at the strongholds and in the city, not along the single Highway-1
   # FLOT, so the stock front-line JTAC (an immortal FAC orbiting the front) spends the
   # war over empty ground. Swap it for the packaged drone JTAC: the campaign's own
   # Predators/Reapers ride the air-to-ground packages and laze from inside the fight.
-  # The ratline west toward Tal Afar / Syria (real, tracked convoys) and standoff
-  # rocket/mortar fire on the forward field at Balad.
+  # The ratline west toward Tal Afar / Syria (real, tracked convoys).
   vietnam_convoy_interdiction: true
   # §50 convoy escort/ambush -- the mirror of interdiction: your OWN supply convoys run
   # Highway 1 and concealed IS ambush teams dig in along the route (peak "ambush alley");
   # fly CAS/BAI escort or the column is ground down before it arrives. The spring is
   # authored as native DCS trigger rules at generation, so there is no plugin to preseed.
   convoy_ambush: true
-  vietnam_airbase_harassment: true
   # The insurgent faction's ERO ZU-23 technicals are HDS Ultimate Compilation content --
   # they resolve only with the mod on (and drop silently without it, so a mod-less
   # install still plays).

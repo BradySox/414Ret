@@ -140,6 +140,16 @@ REMOVED: tuple[Removed, ...] = (
         allow=("removed", "no longer exists", "historical"),
     ),
     Removed(
+        # S36. Not a bare "harassment": the COIN insurgent indirect fire
+        # (coin_harassment) is live and its pages use the word.
+        "airbase harassment and the artillery mode (S36)",
+        "2026-09-16",
+        r"vietnam_airbase_harassment|artillery_base_harassment"
+        r"|artillery_harassment_reach_km|airbaseHarassment|airbase[ -]harassment"
+        r"|standoff harassment|rocket/mortar siege|Vietnam Ops & standoff",
+        allow=("removed", "no longer", "historical", "dropped"),
+    ),
+    Removed(
         "the fork's own Combat SAR (S21), replaced by upstream #929",
         "2026-08-07",
         r"FlightType\.COMBAT_SAR|\bcombatsar\b|HC-130|survivor ledger"

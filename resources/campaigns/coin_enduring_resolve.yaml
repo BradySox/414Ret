@@ -174,10 +174,10 @@ neutral_border_defense:
     ]
 
 settings:
-  # FOB standoff fire (vietnam_airbase_harassment, below) runs on the `vietnamops`
-  # Lua plugin, and a host whose saved plugin defaults have it unticked loses it with
-  # no log line (the §36 lesson). The plugin ships defaultValue: true, but a campaign
-  # preseed is what overrides a saved default.
+  # The Vietnam Ops mechanics below run on the `vietnamops` Lua plugin, and a host
+  # whose saved plugin defaults have it unticked loses them with no log line (the §36
+  # lesson). The plugin ships defaultValue: true, but a campaign preseed is what
+  # overrides a saved default.
   plugins:
     vietnamops: true
     # §98 runtime -- the neutral_border_defense setting does nothing without it.
@@ -208,9 +208,8 @@ settings:
   coin_dispersed_cells: true
   # Insurgent indirect fire: blue airfields/FARPs/FOBs within mortar reach of a live
   # stronghold draw sporadic in-mission rocket/mortar harassment (never a player-spawn
-  # field). Stronghold-proximity based -- unlike the front-based Vietnam §36 toggle
-  # below, this works on the front-less air-assault laydown. Silencing a base's fire
-  # means pushing its stronghold back.
+  # field). Stronghold-proximity based, so it works on the front-less air-assault
+  # laydown. Silencing a base's fire means pushing its stronghold back.
   coin_harassment: true
   # This laydown has NO front line, so the stock front-line JTAC (an immortal FAC
   # orbiting the FLOT) has nothing to orbit and nothing to laze. Swap it for the
@@ -222,7 +221,6 @@ settings:
   # "ambush alley"); fly CAS/BAI escort or the column is ground down. The spring is
   # authored as native DCS trigger rules at generation, so there is no plugin to preseed.
   convoy_ambush: true
-  vietnam_airbase_harassment: true
   # The insurgent faction's ERO ZU-23 technicals/emplacements are §41 HDS
   # Ultimate Compilation content — they resolve only with the mod on (and drop
   # silently without it, so a mod-less install still plays).

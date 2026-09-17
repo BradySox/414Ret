@@ -312,7 +312,7 @@ Mirrors Yankee Station's block except:
   don't advertise a dead mechanic).
 - `vietnam_super_gaggle: true` — Camp Mercury is the besieged-FOB destination.
 - `vietnam_arc_light: true` — SAC cells from the off-map spawn.
-- Flak gauntlet / convoy interdiction / harassment / FAC / snake-and-nape: **on**
+- Flak gauntlet / convoy interdiction / FAC / snake-and-nape: **on** (airbase harassment was removed 2026-09-16)
   (§2 table).
 - `vietnam_political_will: true`, `vietnam_static_front: true` — the requested core.
 - `restrict_weapons_by_date: true` + start date **1981-01-26** → AIM-7F/AIM-9J/L-era

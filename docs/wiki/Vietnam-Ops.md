@@ -95,20 +95,11 @@ the front through Retribution's own convoy system.
 One documented no-op: **Velvet Thunder**, whose Marianas island geography has no roads between
 enemy bases.
 
-## 5 — Airbase harassment
+## 5 — Airbase harassment (removed 2026-09-16)
 
-Forward strips were under near-constant rocket, mortar and sapper standoff attack for years. In the
-base engine an occupied airbase is a perfectly safe rear area until the front reaches it.
-
-- **Which fields.** Only forward (within ~200 km of a front), occupied, land airfields and FARPs. A
-  deep-rear field is never shelled.
-- **Sporadic, not a metronome.** After a startup grace period each field takes a small scattered
-  barrage near the parking area on a randomised cadence — mostly noise and smoke with a modest,
-  tunable bite.
-
-> **You are never shelled on your own ramp.** Any field a client flight spawns from, arrives at or
-> diverts to is hard-excluded, enforced in Python and re-checked in Lua, and the grace period means
-> nobody is shelled mid-alignment. Hard anti-grief guarantees, not options.
+The standoff rocket/mortar barrage on forward fields was removed: a scripted explosion on an
+airfield puts it into DCS's under-attack state and every AI fixed-wing launch there is held for
+the rest of the mission. The section number is kept so older notes still resolve.
 
 ## 6 — Super Gaggle
 

@@ -15,6 +15,7 @@ from game import Game
 from game.factions.faction import Faction
 from game.naming import namegen
 from game.scenery_group import SceneryGroup
+from game.theater.airfieldclearance import log_airfield_clearance_conflicts
 from game.theater import (
     PointWithHeading,
     PresetLocation,
@@ -195,6 +196,9 @@ class GameGenerator:
             # is valid here. Runs only for new games -- never on save load.
             apply_default_player_stances(self.theater, self.settings)
             GroundObjectGenerator(game, self.generator_settings).generate()
+            # Names any authored marker that lands a ground unit on a runway strip
+            # or a stand; DCS then holds every AI taxi at that field (§1).
+            log_airfield_clearance_conflicts(self.theater)
         game.settings.version = VERSION
         return game
 

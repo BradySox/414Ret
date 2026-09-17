@@ -50,3 +50,6 @@ resources/scripts/MissionScripting.original.lua
 !/references/manuals/*/
 /references/manuals/*/*
 !/references/manuals/*/INDEX.md
+
+# mypy
+.mypy_cache/

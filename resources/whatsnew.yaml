@@ -1,6 +1,6 @@
 # What's New — the recent player-visible changes, newest first.
 #
-# Surfaced by the "What's New" toolbar button (docs/dev/414th-features.md §92).
+# Surfaced by the "What's New" toolbar button (docs/dev/retlab-features.md §92).
 # The window shows the first `limit` entries, so the file is authored newest-first
 # and the oldest rows simply fall off the bottom of the window.
 #

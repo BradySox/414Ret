@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Any, Optional
 
 from game.dcs.groundunittype import GpsJammingProperties
-from game.fourteenth.gps_jamming import GPS_GUIDED_WEAPON_PATTERNS
+from game.retlab.gps_jamming import GPS_GUIDED_WEAPON_PATTERNS
 from game.missiongenerator.gpsjammingluadata import populate_gps_jamming_lua
 from game.missiongenerator.luagenerator import LuaData
 

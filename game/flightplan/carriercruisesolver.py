@@ -10,7 +10,7 @@ ships one), so the solved heading sits clockwise of the wind reciprocal: the
 ambient wind arrives over the port bow and the apparent wind runs down the
 angled deck.  Solving to the counterclockwise side mirrors the deck to
 starboard and doubles the felt crosswind instead of cancelling it — the B55
-desk finding (see docs/dev/414th-features.md §88).
+desk finding (see docs/dev/retlab-features.md §88).
 """
 
 from __future__ import annotations

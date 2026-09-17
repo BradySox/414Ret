@@ -7,7 +7,7 @@ $ErrorActionPreference = "Stop"
 
 function Write-Step {
     param([string]$Message)
-    Write-Host "[414Ret] $Message"
+    Write-Host "[RetLab] $Message"
 }
 
 function Test-Python311 {

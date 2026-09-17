@@ -12,7 +12,7 @@ groups:
       fallback_classes:
         - SearchRadar
         - SearchTrackRadar
-    # 414th: the site's support section (§85 follow-on). Explicit unit_types
+    # RetLab: the site's support section (§85 follow-on). Explicit unit_types
     # whitelists, NOT unit_classes -- a class-based C2 slot would pull every
     # CommandPost unit the faction can reach (a Patriot ECS or Buk CC at an EWR
     # site). Access is gated by the faction's own lists, so a faction fielding

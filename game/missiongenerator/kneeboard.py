@@ -508,7 +508,7 @@ def format_kneeboard_time(
     Both, never one: Zulu is what the DED reads, and a squadron flying mixed types
     coordinates off local. Zulu leads because it is the figure the cockpit shows.
     Stacked rather than side by side, so the column width is unchanged (see
-    docs/dev/design/414th-dtc-cartridge-notes.md).
+    docs/dev/design/retlab-dtc-cartridge-notes.md).
     """
     local = _format_clock(time)
     zulu = _zulu_text(time, zulu_tz)
@@ -3401,7 +3401,7 @@ class KneeboardGenerator(MissionInfoGenerator):
         to generate because an intel lookup hiccuped.
         """
         try:
-            from game.fourteenth.gps_jamming import briefed_jammer_areas
+            from game.retlab.gps_jamming import briefed_jammer_areas
 
             areas = briefed_jammer_areas(self.game, flight.friendly)
             if not areas:

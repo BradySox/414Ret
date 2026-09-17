@@ -1,6 +1,6 @@
 # Strikes push behind their SEAD window
 
-414Ret §69. He queued this by name in his README's 2026-08 review — "packages are
+RetLab §69. He queued this by name in his README's 2026-08 review — "packages are
 scheduled independently today, so nothing stops a strike entering a ring before the SEAD
 servicing it." This is that, ready to apply.
 

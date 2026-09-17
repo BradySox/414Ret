@@ -8,7 +8,7 @@ from uuid import UUID
 from game.ato.flighttype import FlightType
 from game.debriefing import Debriefing
 from game.data.units import FRONTLINE_UNIT_CLASSES
-from game.fourteenth.c2_decapitation import c2_status_line
+from game.retlab.c2_decapitation import c2_status_line
 from game.ground_forces.combat_stance import CombatStance
 from game.missiongenerator.interceptattrition import (
     fielded_qra_by_squadron,
@@ -114,7 +114,7 @@ class MissionResultsProcessor:
         # Vietnam Ops §37: charge Super Gaggle airframe losses back to the real BLUE
         # squadrons that flew them, and credit the outpost on delivery. No-op when there was
         # no committed gaggle this turn.
-        from game.fourteenth.super_gaggle import reconcile_super_gaggle
+        from game.retlab.super_gaggle import reconcile_super_gaggle
 
         reconcile_super_gaggle(self.game, debriefing)
 
@@ -122,7 +122,7 @@ class MissionResultsProcessor:
         # §63: debit each launching ship group's persisted campaign magazine by what
         # the cruisemissiles plugin reported fired -- the only debit site, so mission
         # re-generation never double-counts. No-op when nothing was reported.
-        from game.fourteenth.cruise_raids import reconcile_cruise_missiles
+        from game.retlab.cruise_raids import reconcile_cruise_missiles
 
         reconcile_cruise_missiles(self.game, debriefing)
 
@@ -131,7 +131,7 @@ class MissionResultsProcessor:
         # navalmagazines plugin reported fired -- the only debit site, so mission
         # re-generation never double-counts. The weapon set is disjoint from §63's,
         # so a shot is never charged twice. No-op when nothing was reported.
-        from game.fourteenth.naval_magazines import reconcile_naval_magazines
+        from game.retlab.naval_magazines import reconcile_naval_magazines
 
         reconcile_naval_magazines(self.game, debriefing)
 
@@ -143,8 +143,8 @@ class MissionResultsProcessor:
         # so this can run last.
         # §75: the alternate-ending progress digest -- empty (and hidden) unless
         # the campaign authors a `victory:` block or a knob is on.
-        from game.fourteenth.victory import victory_sitrep_lines
-        from game.fourteenth.supply_report import supply_sitrep_lines
+        from game.retlab.victory import victory_sitrep_lines
+        from game.retlab.supply_report import supply_sitrep_lines
 
         self.game.last_sitrep = Sitrep.from_debriefing(
             debriefing,
@@ -339,7 +339,7 @@ class MissionResultsProcessor:
         Both coalitions, because a career is bookkeeping and red's costs nothing.
         Only BLUE's new awards reach the SITREP -- that is the player's briefing.
         """
-        from game.fourteenth.career import fold_sortie_records
+        from game.retlab.career import fold_sortie_records
 
         self._career_award_lines = []
         if not self.game.settings.pilot_career_logbook:
@@ -372,8 +372,8 @@ class MissionResultsProcessor:
         writes OUTSIDE the save -- to a file that survives the campaign, so a
         player who does not want that can turn it off and keep campaign careers.
         """
-        from game.fourteenth.career import is_combat_sortie
-        from game.fourteenth.pilot_profile import record_mission
+        from game.retlab.career import is_combat_sortie
+        from game.retlab.pilot_profile import record_mission
 
         if not self.game.settings.lifetime_pilot_profiles:
             return

@@ -42,7 +42,7 @@ groups:
         - S-400 55K6 cp # SA-21
     - name: S-300 Site TR
       unit_count:
-        - 2 # 414th: guidance-radar redundancy - one HARM must not blind the site
+        - 2 # RetLab: guidance-radar redundancy - one HARM must not blind the site
       unit_types:
         - S-300PS 40B6M tr # SA-10 Flap Lid-A TR
         - S-300PS 30N6 TRAILER tr # SA-10B
@@ -87,7 +87,7 @@ groups:
     - name: S-300 Site Logistics
       optional: true
       unit_count:
-        # 414th: the textbook configuration is THE configuration (DM call
+        # RetLab: the textbook configuration is THE configuration (DM call
         # 2026-08-04) -- fixed count, no bare-site roll
         - 2
       unit_types:
@@ -96,7 +96,7 @@ groups:
         - Ural-375
         - Ural-4320-31
         - Ural-4320T
-    # 414th: the battery's refuelling section and its diesel power stations.
+    # RetLab: the battery's refuelling section and its diesel power stations.
     # Fuel and power are SEPARATE slots because a unit group fields exactly one
     # type -- a single mixed slot would yield two bowsers or two generators,
     # never one of each. Both are optional and fill: false, so a faction with
@@ -105,7 +105,7 @@ groups:
       optional: true
       fill: false
       unit_count:
-        # 414th: the textbook configuration is THE configuration (DM call
+        # RetLab: the textbook configuration is THE configuration (DM call
         # 2026-08-04) -- fixed count, no bare-site roll
         - 2
       unit_types:
@@ -118,12 +118,12 @@ groups:
       optional: true
       fill: false
       unit_count:
-        # 414th: the textbook configuration is THE configuration (DM call
+        # RetLab: the textbook configuration is THE configuration (DM call
         # 2026-08-04) -- fixed count, no bare-site roll
         - 2
       unit_types:
         - generator_5i57
-    # 414th: the 34Ya6E Gazetchik-E decoy emitter (HDS mod unit -- carried only
+    # RetLab: the 34Ya6E Gazetchik-E decoy emitter (HDS mod unit -- carried only
     # by the already-HDS-gated modern presets, so a vanilla game never sees it).
     # Whether the DCS unit actually seduces ARMs is the in-game-pass question.
     - name: S-300 Site Decoy
@@ -134,7 +134,7 @@ groups:
         - 2
       unit_types:
         - 34Ya6E Gazetchik E decoy
-    # 414th (§86): an OPTIONAL GPS-jamming section attached to the battery.
+    # RetLab (§86): an OPTIONAL GPS-jamming section attached to the battery.
     #
     # The other half of the §86 placement model. A standalone `GPS Jamming Site`
     # exists for putting denial anywhere; this is for putting it INSIDE an

@@ -1,6 +1,6 @@
 """COIN in-mission liveliness -> Lua config bridge (``dcsRetribution.coin``).
 
-The COIN layer (``game/fourteenth/coin*.py``) is a turn-boundary force-model system: it
+The COIN layer (``game/retlab/coin*.py``) is a turn-boundary force-model system: it
 spawns / ages / despawns recon-fogged red TGOs and adjudicates their consequences (an
 IED's fuse, an HVT's strike window) at ``finish_turn``. This emitter adds the things
 the force model cannot express -- **in-mission movement and ambient pressure** --

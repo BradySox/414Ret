@@ -1,7 +1,7 @@
 """Mobile point air-defense units are hidden on the MFD even when they ride
 inside a non-air-defense group.
 
-``hidden_on_mfd`` is a group-level DCS property. The 414th's auto-hide feature
+``hidden_on_mfd`` is a group-level DCS property. RetLab's auto-hide feature
 keys it off the parent group's *task*, so a SHORAD/AAA/MANPAD escort generated
 inside an armor or missile group (whose task is not air defense) used to inherit
 the parent's visible flag and betray itself on the datalink. The group

@@ -304,7 +304,7 @@ class TheaterState(WorldState["TheaterState"]):
             recovery_targets={cp: 0 for cp in finder.friendly_naval_control_points()},
             csar_targets=list(finder.downed_pilots()),
             csar_flights_planned=0,
-            # 414th: hoisted to a local above (reused for the threat-zone math),
+            # RetLab: hoisted to a local above (reused for the threat-zone math),
             # so reuse the list instead of re-walking the finder.
             enemy_air_defenses=enemy_air_defenses,
             threatening_air_defenses=[],

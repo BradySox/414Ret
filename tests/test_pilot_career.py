@@ -19,7 +19,7 @@ from typing import Any, Optional
 
 import pytest
 
-from game.fourteenth.career import (
+from game.retlab.career import (
     CareerData,
     RankGrade,
     RankLadder,

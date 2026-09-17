@@ -193,7 +193,7 @@ def test_naval_gunfire_no_node_without_gun_ships() -> None:
 
 # Convoy interdiction (§35) no longer emits a Lua node -- it creates a real, tracked enemy
 # convoy in the force model instead of a phantom runtime column. Its coverage now lives in
-# tests/fourteenth/test_vietnam_convoy.py; the emitter must never emit a "convoy" node.
+# tests/retlab/test_vietnam_convoy.py; the emitter must never emit a "convoy" node.
 def test_convoy_never_emits_a_lua_node() -> None:
     # Even with the toggle on (via another suite feature present), no convoy sub-node exists.
     lua = _emit([], flak=True)
@@ -239,8 +239,8 @@ def _field(
     return _Field(name, cptype, captured, x, y)
 
 
-# The Super Gaggle geography + squadron selection now live in game/fourteenth/super_gaggle.py
-# (plan_super_gaggle), tested in tests/fourteenth/test_super_gaggle.py. The emitter just
+# The Super Gaggle geography + squadron selection now live in game/retlab/super_gaggle.py
+# (plan_super_gaggle), tested in tests/retlab/test_super_gaggle.py. The emitter just
 # serializes the planned commitment off the game -- so it emits a node iff one was planned.
 def _commitment() -> Any:
     return SimpleNamespace(

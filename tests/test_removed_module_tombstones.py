@@ -50,7 +50,7 @@ def test_an_untombstoned_missing_module_still_fails_loudly() -> None:
     still raise rather than silently degrade the save it appears in.
     """
     with pytest.raises(ModuleNotFoundError):
-        _unpickler().find_class("game.fourteenth.not_a_real_module", "Whatever")
+        _unpickler().find_class("game.retlab.not_a_real_module", "Whatever")
 
 
 def test_the_placeholder_absorbs_whatever_state_the_save_carried() -> None:

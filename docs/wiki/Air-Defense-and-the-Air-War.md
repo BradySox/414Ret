@@ -1,10 +1,10 @@
-<!-- 414Ret wiki: how the fork plans the air war. Modeled on the upstream
-     wiki tone; documents the 414th's air-defense planning rework, QRA reserve,
+<!-- RetLab wiki: how the fork plans the air war. Modeled on the upstream
+     wiki tone; documents RetLab's air-defense planning rework, QRA reserve,
      SEAD/DEAD behavior, and the IADS engine note. Cross-links Mission-planning. -->
 
 # Air defense and the air war
 
-414Ret reworks how a Retribution campaign plans its air war so it behaves like a campaign
+RetLab reworks how a Retribution campaign plans its air war so it behaves like a campaign
 rather than a queue of isolated sorties. The auto-planner holds interceptors in reserve, lays
 overlapping fighter coverage, refuses to send bombers through a live SAM belt, and keeps mobile
 short-range defences off your datalink so you plan SEAD against the sites that matter. This

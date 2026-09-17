@@ -26,7 +26,7 @@ from PySide6.QtWidgets import (
 )
 
 import qt_ui.uiconstants as CONST
-from game.fourteenth.pilot_profile import (
+from game.retlab.pilot_profile import (
     PilotProfile,
     load_profiles,
     profile_lines,

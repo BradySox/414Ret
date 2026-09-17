@@ -2,7 +2,7 @@
 
 Reads ``resources/borders/national_postures.yaml`` — 47 countries, both blocs,
 244 dated ranges in five buckets. Sources and the reasoning behind every range
-are in ``docs/dev/design/414th-national-postures-notes.md``.
+are in ``docs/dev/design/retlab-national-postures-notes.md``.
 
 **What this decides today: the airframe.** ``aircraft_for`` is what lets a border
 be drawn from terrain data alone — the campaign names no fighter and the era

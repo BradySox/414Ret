@@ -1,6 +1,6 @@
 """Legacy FlightType migration.
 
-The 414th's retired SCRAMBLE QRA flight type (and the older ISR type) must map
+RetLab's retired SCRAMBLE QRA flight type (and the older ISR type) must map
 onto their live equivalents so campaigns saved on older builds still load. Both
 the runtime ``_missing_`` path and the unpickler path are covered.
 """

@@ -22,7 +22,7 @@ import pytest
 from PySide6.QtWidgets import QApplication
 
 import qt_ui.uiconstants as CONST
-from game.fourteenth.whatsnew import WhatsNewEntry
+from game.retlab.whatsnew import WhatsNewEntry
 from qt_ui.liberation_theme import DEFAULT_THEME_INDEX, set_theme_index
 
 

@@ -5,7 +5,7 @@ type. You can override those defaults per aircraft so that, for example, every S
 spawns with your preferred bombs. This page explains the two ways to set custom loadouts
 and the CLSID pitfall that silently breaks them.
 
-![The Edit flight Payload tab: flight-member and same-loadout/same-livery toggles, the assigned TGP laser code with a preset-code selector, an internal-fuel slider, the named-loadout dropdown, and the per-pylon station list with a Save Payload / Create Backup row](https://raw.githubusercontent.com/BradySox/414Ret/main/docs/wiki/img/edit-flight-payload.png)
+![The Edit flight Payload tab: flight-member and same-loadout/same-livery toggles, the assigned TGP laser code with a preset-code selector, an internal-fuel slider, the named-loadout dropdown, and the per-pylon station list with a Save Payload / Create Backup row](https://raw.githubusercontent.com/BradySox/RetLab/main/docs/wiki/img/edit-flight-payload.png)
 
 *The flight payload editor. The named-loadout dropdown (here an `IRON` profile) is where a `Retribution <mission type>` loadout gets picked up; tick **Use custom loadout** to set pylons by hand. Laser code and internal fuel are set on the same tab.*
 
@@ -50,7 +50,7 @@ than depending on each player's Mission Editor.
 
 ## The fork's TARPS payload (worked example)
 
-The 414th treats TARPS as a real player task (see [Fog of War and
+RetLab treats TARPS as a real player task (see [Fog of War and
 Reconnaissance](Fog-of-War-and-Reconnaissance)), so the F-14 payload files add a
 `Retribution TARPS` recon profile alongside the usual BARCAP/TARCAP/Escort/Strike entries.
 It mounts a reconnaissance camera pod on the Tomcat's belly recon station — for example, in

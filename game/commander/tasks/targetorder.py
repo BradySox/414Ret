@@ -18,7 +18,7 @@ from __future__ import annotations
 import random
 from typing import Iterable, TYPE_CHECKING, TypeVar
 
-from game.fourteenth.c2_decapitation import unpredictability_bonus
+from game.retlab.c2_decapitation import unpredictability_bonus
 
 if TYPE_CHECKING:
     from game.commander.theaterstate import TheaterState

@@ -229,7 +229,7 @@ MISSION_GENERATION_PAGE = "Mission Generation"
 KNEEBOARDS_PAGE = "Kneeboards"
 # Period-ops suite — Vietnam-era runtime mechanics, opt-in, default OFF globally and
 # flipped ON by the Vietnam campaign YAMLs' settings: block. See
-# docs/dev/design/414th-vietnam-ops-notes.md.
+# docs/dev/design/retlab-vietnam-ops-notes.md.
 VIETNAM_OPS_PAGE = "Vietnam Ops"
 PERFORMANCE_PAGE = "Performance"
 
@@ -716,15 +716,15 @@ _LAYOUT_SPEC: list[tuple[str, list[tuple[str, list[str]]]]] = [
     ),
 ]
 
-# The 414th Features page (§28). The split is the mental model: this page answers
+# The RetLab Features page (§28). The split is the mental model: this page answers
 # "what is running", the topical pages answer "how it behaves", so a feature's
 # on/off switch lives here and its tuning knobs stay beside what they tune.
 #
 # FEATURE_GATE_FIELDS is a literal rather than an import of the feature registry
 # because game/__init__ already pulls in this module -- importing the registry
-# would be circular. tests/fourteenth/test_features_registry.py fails CI if the
+# would be circular. tests/retlab/test_features_registry.py fails CI if the
 # two fall out of step.
-FEATURES_PAGE = "414th Features"
+FEATURES_PAGE = "RetLab Features"
 
 FEATURE_GATE_FIELDS: dict[str, list[str]] = {
     "Recon, concealment & intel": [
@@ -1022,7 +1022,7 @@ class Settings:
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
         # Stock default (2026-08-09 re-convergence): upstream schedules
-        # back-to-back waves. The 414th planner suite preset sets 15.
+        # back-to-back waves. RetLab planner suite preset sets 15.
         default=timedelta(minutes=0),
         min=0,
         max=60,
@@ -1213,7 +1213,7 @@ class Settings:
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
         # Stock default (2026-08-09 re-convergence): upstream plans no add-on
-        # recon. The 414th planner suite preset turns this on.
+        # recon. RetLab planner suite preset turns this on.
         default=False,
         invert=False,
         detail=(
@@ -1385,7 +1385,7 @@ class Settings:
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
         # Stock default (2026-08-09 re-convergence): upstream ignores weather.
-        # The 414th planner suite preset turns this on.
+        # RetLab planner suite preset turns this on.
         default=False,
         detail=(
             "The theater commander accounts for the sky when planning (both "
@@ -1403,7 +1403,7 @@ class Settings:
         section=GENERAL_SECTION,
         # Stock default (2026-08-09 re-convergence): upstream sets the SEAD and
         # jammer flags off one radar-SAM trigger, so a package can pull SEAD
-        # Escort, SEAD Sweep and (on DEAD) a SEAD flight at once. The 414th
+        # Escort, SEAD Sweep and (on DEAD) a SEAD flight at once. RetLab
         # planner suite preset turns this on.
         default=False,
         detail=(
@@ -1423,7 +1423,7 @@ class Settings:
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
         # Stock default (2026-08-09 re-convergence): upstream times packages
-        # independently. The 414th planner suite preset turns this on.
+        # independently. RetLab planner suite preset turns this on.
         default=False,
         detail=(
             "Packages used to be timed independently, so a strike could arrive "
@@ -1442,7 +1442,7 @@ class Settings:
         page=CAMPAIGN_DOCTRINE_PAGE,
         section=GENERAL_SECTION,
         # Stock default (2026-08-09 re-convergence): upstream plans no escort
-        # jammers. The 414th planner suite preset sets 4.
+        # jammers. RetLab planner suite preset sets 4.
         default=0,
         min=0,
         max=12,
@@ -2173,7 +2173,7 @@ class Settings:
             "per-turn rotation). Turn off for the stock per-turn behaviour."
         ),
         # Stock default (2026-08-09 re-convergence): upstream rotates time of
-        # day per turn with memoryless weather. The 414th planner suite preset
+        # day per turn with memoryless weather. RetLab planner suite preset
         # turns this on.
         default=False,
     )
@@ -2453,7 +2453,7 @@ class Settings:
         CAMPAIGN_MANAGEMENT_PAGE,
         HQ_AUTOMATION_SECTION,
         # Stock default (2026-08-09 re-convergence): upstream buys uniformly at
-        # random. The 414th planner suite preset turns this on.
+        # random. RetLab planner suite preset turns this on.
         default=False,
         detail=(
             "The AI commander's auto-spend follows its side's strategic read "
@@ -3436,7 +3436,7 @@ class Settings:
     # Vietnam Ops (period-ops suite) -- opt-in Vietnam-era runtime mechanics. All
     # default OFF globally; the Vietnam campaign YAMLs flip the relevant ones ON via
     # their settings: block. These are SCAFFOLD toggles: each gates a feature that
-    # lands on its own branch (see docs/dev/design/414th-vietnam-ops-notes.md). Until
+    # lands on its own branch (see docs/dev/design/retlab-vietnam-ops-notes.md). Until
     # that feature lands, the toggle is inert.
     vietnam_arc_light: bool = boolean_option(
         "Arc Light area bombing (heavy bombers)",
@@ -3782,8 +3782,8 @@ class Settings:
         # plugins were retired during the MIST -> MOOSE framework consolidation:
         # dismounts was a default-off, FPS-heavy MIST-only plugin with no MOOSE
         # successor, and ewrs is superseded by the MOOSE Ops.INTEL-based "bigeye"
-        # EWR (see docs/dev/design/414th-dismounts-decision.md and
-        # 414th-ewrs-retirement-decision.md). The "flightcontrol" MOOSE
+        # EWR (see docs/dev/design/retlab-dismounts-decision.md and
+        # retlab-ewrs-retirement-decision.md). The "flightcontrol" MOOSE
         # FLIGHTCONTROL ATC plugin was retired as a half-baked feature. The "arty"
         # (CG ArtySpotter) and "artymbot" (Mbot Call-Artillery) player fire-support
         # scripts were retired as unused: both had been silently dropped from the

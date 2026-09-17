@@ -1,7 +1,7 @@
 {
   "country": "Combined Joint Task Forces Blue",
   "name": "NATO Baltic 2027",
-  "authors": "414th Joint Fighter Group",
+  "authors": "RetLab",
   "description": "<p>The NATO coalition of the Baltic approaches, 2027 &mdash; the <em>Operation Baltic Fury</em> order of battle.</p><p>A US carrier strike group and USAF wing, reinforced by the two allies whose forces the Baltic actually belongs to: <strong>Sweden</strong> (NATO member since 2024, fighting in its home water &mdash; LvS-103 area SAM, RBS-15KA coastal anti-ship, Visby corvettes and CB90s for the archipelago, Strv 122/123 and Archer ashore) and the <strong>United Kingdom</strong> of the Joint Expeditionary Force (Type 45 air-defence destroyers and Type 26 frigates for the carrier screen, Sky Sabre and Stormer HVM over the recaptured airfields, Challenger 3 ashore).</p><p>Requires the CurrentHill USA, Sweden and UK asset packs.</p>",
   "locales": [
     "en_US",

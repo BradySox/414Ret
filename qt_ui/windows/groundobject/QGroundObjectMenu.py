@@ -18,8 +18,8 @@ from dcs import Point
 
 from game.config import REWARDS
 from game.data.building_data import FORTIFICATION_BUILDINGS
-from game.fourteenth.cruise_raids import tgo_magazines
-from game.fourteenth.region_priorities import RegionPriority, family_of
+from game.retlab.cruise_raids import tgo_magazines
+from game.retlab.region_priorities import RegionPriority, family_of
 from game.server import EventStream
 from game.sim.gameupdateevents import GameUpdateEvents
 from game.theater import ControlPoint, TheaterGroundObject, Player

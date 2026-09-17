@@ -60,7 +60,7 @@ def roll_plane_altitude_offset(low: int, high: int) -> int:
     return 1000 * random.randint(low, high)
 
 
-# 414th: fixed "role" callsigns for the rescue/EW package. They are surfaced in the
+# RetLab: fixed "role" callsigns for the rescue/EW package. They are surfaced in the
 # per-flight callsign picker (available_callsigns) and used to default a fresh
 # flight's callsign, but stay player-editable (a soft lock). They are NOT stock DCS
 # callsigns, so FlightGroupSpawner registers the chosen one into the spawn country's
@@ -76,7 +76,7 @@ ROLE_CALLSIGNS: frozenset[str] = frozenset({"Toxic", "Sandy"})
 
 
 def role_callsign(flight_type: FlightType, is_helicopter: bool) -> Optional[str]:
-    """The fixed role callsign for a 414th EW role, or None if there isn't one."""
+    """The fixed role callsign for a RetLab EW role, or None if there isn't one."""
     return _ROLE_CALLSIGN_BY_TYPE.get(flight_type)
 
 
@@ -104,7 +104,7 @@ class Flight(
         self.coalition = squadron.coalition
         self.squadron = squadron
         self.flight_type = flight_type
-        # 414th: default a fresh flight's callsign to its fixed role callsign
+        # RetLab: default a fresh flight's callsign to its fixed role callsign
         # (King / Jolly / Sandy / Toxic) when one applies, numbered after any
         # same-role flights already fragged. Soft -- editable in the picker.
         # Defensive airframe lookup so a lightweight Flight (tests) never crashes.
@@ -116,7 +116,7 @@ class Flight(
             if role is not None:
                 self.callsign = Callsign(role, self._next_role_callsign_nr(role))
             else:
-                # 414th: else fall back to the squadron's custom event callsign
+                # RetLab: else fall back to the squadron's custom event callsign
                 # (e.g. "Voodoo") when it declares one. Role callsigns win because
                 # they are mission-specific (a rescue C-130 is "King" regardless).
                 squadron_callsign = getattr(squadron, "callsign", None)
@@ -143,7 +143,7 @@ class Flight(
             self.tcn_name = callsign_tcn
 
         self.initialize_fuel()
-        # 414th (§43): seed a genuinely fresh player-side flight's fuel + cockpit
+        # RetLab (§43): seed a genuinely fresh player-side flight's fuel + cockpit
         # properties (condition/wear/spawn/...) from the per-aircraft "save as
         # default" store. Only when roster is None -- a brand-new flight, never a
         # clone that already carries member edits -- and BLUE only, so it never
@@ -151,13 +151,13 @@ class Flight(
         # persistency isn't set up (headless tests). Runs after initialize_fuel so
         # it wins over the engine's full-tank default.
         if roster is None:
-            from game.fourteenth.flight_defaults import apply_flight_defaults
+            from game.retlab.flight_defaults import apply_flight_defaults
 
             apply_flight_defaults(self)
         self.use_same_loadout_for_all_members = True
         self.use_same_livery_for_all_members = True
-        # 414th: an override for this flight's REFUEL waypoint position, set by the
-        # long-range carrier post-planning pass (game/fourteenth/carrier_ops.py). A
+        # RetLab: an override for this flight's REFUEL waypoint position, set by the
+        # long-range carrier post-planning pass (game/retlab/carrier_ops.py). A
         # carrier flight whose package has no tanker of its own would otherwise route
         # its refuel point to the far end of the package (no tanker there); this pins
         # it onto the carrier's held buddy-tanker orbit instead. None for everything
@@ -231,12 +231,12 @@ class Flight(
                 if "Combined Joint Task Forces" in country_name or c == country_name:
                     for name in dcs_unit.callnames[c]:
                         callsigns.add(name)
-        # 414th: offer the flight's fixed role callsign (King/Jolly/Sandy/Toxic) in
+        # RetLab: offer the flight's fixed role callsign (King/Jolly/Sandy/Toxic) in
         # the picker too, so the rescue/EW roles can keep their callsign.
         role = role_callsign(self.flight_type, self.squadron.aircraft.helicopter)
         if role is not None:
             callsigns.add(role)
-        # 414th: and the squadron's custom event callsign (e.g. "Voodoo"), so it
+        # RetLab: and the squadron's custom event callsign (e.g. "Voodoo"), so it
         # stays selectable in the picker like the role callsigns.
         squadron_callsign = getattr(self.squadron, "callsign", None)
         if squadron_callsign:
@@ -532,7 +532,7 @@ class Flight(
         self._flight_plan_builder.regenerate(dump_debug_info)
 
     def refuel_waypoint_position(self, default: Point) -> Point:
-        """The position to build this flight's REFUEL waypoint at: the 414th
+        """The position to build this flight's REFUEL waypoint at: RetLab
         carrier buddy-tanker override when set, else the shared package refuel
         point (the stock behavior). See ``refuel_point_override``."""
         override = getattr(self, "refuel_point_override", None)

@@ -1,6 +1,6 @@
 -- The King's on-scene systems: a player-flown fixed-wing CSAR C-130J finds the
 -- survivor by DF and builds a threat picture for the Sandys and the helicopter.
--- See docs/dev/design/414th-csar-notes.md (the King on-scene section) and §100.
+-- See docs/dev/design/retlab-csar-notes.md (the King on-scene section) and §100.
 --
 -- Reads dcsRetribution.CSAR (downedPilots, rescueFlights, beaconHz) written by
 -- luagenerator.generate_csar_data. Loads after OpsCSAR.lua; touches nothing of it.

@@ -481,7 +481,7 @@ VIETNAM_GROUND_PROCUREMENT = GroundUnitProcurementRatios(
 #     and Cold War 35/20). This turns intercepts into visual merges instead of BVR shots.
 #   * rtb_speed drops to the subsonic period cruise (450 -> 400 kt).
 #   * the ground OOB above (infantry/artillery/AAA-heavy, no ATGM/IFV).
-# See docs/dev/design/414th-vietnam-retribution-notes.md.
+# See docs/dev/design/retlab-vietnam-retribution-notes.md.
 VIETNAM_DOCTRINE = replace(
     COLDWAR_DOCTRINE,
     name="vietnam",

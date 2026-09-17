@@ -5,7 +5,7 @@ entry links to (``linkDynTempl``), if that group is flagged ``dynSpawnTemplate``
 This pass flags one player flight per base and aircraft type and writes the link,
 so a pilot who takes a dynamic slot instead of a fragged one gets that flight's
 route, comm card, loadout and properties instead of a blank jet.
-See docs/dev/design/414th-dynamic-spawn-templates-notes.md.
+See docs/dev/design/retlab-dynamic-spawn-templates-notes.md.
 
 The template group stays in the slot list (DM, in the editor, 2026-09-15), so
 the real flight is marked and nothing is cloned. Only client flights qualify:

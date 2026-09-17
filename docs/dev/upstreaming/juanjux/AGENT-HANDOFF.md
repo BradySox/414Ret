@@ -1,4 +1,4 @@
-# Three features from the 414Ret fork — implementation brief
+# Three features from the RetLab fork — implementation brief
 
 **For an agent working in `juanjux/dcs-retribution`.** Written 2026-08-24 against
 `master @ ca780fd2`.
@@ -6,7 +6,7 @@
 Three self-contained features, in ascending order of size. Each is independent — do one,
 all three, or none, in any order.
 
-Everything here was built and flown in the 414Ret fork. Where a feature has open
+Everything here was built and flown in the RetLab fork. Where a feature has open
 verification debt, this brief says so rather than claiming it is finished.
 
 ---
@@ -20,9 +20,9 @@ this says, find it by the surrounding code and adapt. Do not force a match.
 **The fast path.** Each feature has a patch verified to apply cleanly at `ca780fd2`:
 
 ```
-curl -O https://raw.githubusercontent.com/BradySox/414Ret/main/docs/dev/upstreaming/juanjux/naval-station-keeping/station-keeping.patch
-curl -O https://raw.githubusercontent.com/BradySox/414Ret/main/docs/dev/upstreaming/juanjux/sead-coordination/sead-coordination.patch
-curl -O https://raw.githubusercontent.com/BradySox/414Ret/main/docs/dev/upstreaming/juanjux/region-priorities/region-priorities-core.patch
+curl -O https://raw.githubusercontent.com/BradySox/RetLab/main/docs/dev/upstreaming/juanjux/naval-station-keeping/station-keeping.patch
+curl -O https://raw.githubusercontent.com/BradySox/RetLab/main/docs/dev/upstreaming/juanjux/sead-coordination/sead-coordination.patch
+curl -O https://raw.githubusercontent.com/BradySox/RetLab/main/docs/dev/upstreaming/juanjux/region-priorities/region-priorities-core.patch
 git apply station-keeping.patch sead-coordination.patch region-priorities-core.patch
 ```
 
@@ -38,9 +38,9 @@ spec is authoritative; the patch is a convenience.
    the Campaign Doctrine page. They must not use the same insertion anchor. As written,
    feature 2 anchors on `desired_barcap_mission_duration` and feature 3 on
    `desired_awacs_mission_duration`. Keep them apart.
-2. **Do not take patches generated against the old 414Ret fork point** (`dce851ea`).
+2. **Do not take patches generated against the old RetLab fork point** (`dce851ea`).
    That commit predates both trees' upstream syncs and nothing built against it applies
-   to you. Your `tgogenerator.py` is 1,760 lines; that base's is 1,636; 414Ret's is
+   to you. Your `tgogenerator.py` is 1,760 lines; that base's is 1,636; RetLab's is
    2,213.
 
 **House style in your tree, which this follows:** comments say *why*, never *what*;
@@ -50,7 +50,7 @@ a constraint learned from a flown test is worth a comment, the next line is not.
 
 ## Feature 1 — Naval station-keeping racetracks
 
-**Size:** one file, +115 lines. **Tests:** 11, self-contained. **Status in 414Ret:**
+**Size:** one file, +115 lines. **Tests:** 11, self-contained. **Status in RetLab:**
 partially verified in-game (see below).
 
 ### The defect, which is in your tree
@@ -143,7 +143,7 @@ is pydcs and is already used in five places in upstream's own code.
 
 - `tests/missiongenerator/test_naval_station_keeping.py` passes (11 tests). It drives
   real pydcs `ShipGroup`s against a faked theater — only `landmap` and `is_in_sea` are
-  consulted — so it needs nothing from the 414Ret tree.
+  consulted — so it needs nothing from the RetLab tree.
 - The one that matters is `test_the_anchor_is_the_centre_of_the_track`. If you refactor,
   keep it passing.
 - A generated mission's naval groups have a 5-waypoint route ending in a `SwitchWaypoint`
@@ -151,7 +151,7 @@ is pydcs and is already used in five places in upstream's own code.
 
 ### Honest status
 
-**Partially verified in-game** (414Ret row B48). Established across three campaigns and
+**Partially verified in-game** (RetLab row B48). Established across three campaigns and
 four Tacviews: groups that previously sat at 0.1 km now sail 12–24 km per mission;
 formation spacing is unchanged (widest gap between two hulls of a group constant to two
 decimal places across a whole mission); net drift stays small — a Perry sailed 22.9 km
@@ -167,7 +167,7 @@ Carriers are excluded by design — they steam for wind.
 
 ## Feature 2 — Strikes push behind their SEAD window
 
-**Size:** two files, +143 lines. **Tests:** 15, self-contained. **Status in 414Ret:**
+**Size:** two files, +143 lines. **Tests:** 15, self-contained. **Status in RetLab:**
 verified in-game, no caveats.
 
 Your README's 2026-08 review already queued this: *"packages are scheduled independently
@@ -236,7 +236,7 @@ before the recovery-tanker ETA filtering (so those are collected against the coo
 TOTs). In your tree that is immediately above the `# division by 2 is meant to provide
 some leeway...` comment.
 
-> Your scheduler has no carrier-recovery stagger. 414Ret's runs this pass *before* its
+> Your scheduler has no carrier-recovery stagger. RetLab's runs this pass *before* its
 > stagger; the stagger only ever delays, so it can nudge a strike deeper into its window
 > but never back ahead of its SEAD. If you add a stagger later, keep that order.
 
@@ -246,17 +246,17 @@ some leeway...` comment.
 ### Acceptance
 
 - `tests/test_sead_strike_coordination.py` passes (15 tests) — pydcs plus
-  `SimpleNamespace` fakes, nothing from the 414Ret tree.
+  `SimpleNamespace` fakes, nothing from the RetLab tree.
 - With the setting off, the pass returns immediately and no TOT changes.
 
 ---
 
 ## Feature 3 — Region priorities
 
-**Size:** six files, one new, +230 lines. **Tests:** 18. **Status in 414Ret:** verified
+**Size:** six files, one new, +230 lines. **Tests:** 18. **Status in RetLab:** verified
 in-game, through a Qt surface not included here.
 
-This landed 2026-08-20 — after your last 414Ret review window closed, so it is in none of
+This landed 2026-08-20 — after your last RetLab review window closed, so it is in none of
 your ledgers.
 
 ### What it is
@@ -269,7 +269,7 @@ It is the *weighting* answer to the territory red-one1's upstream #686 hard-limi
 navmesh polygons, and to BMS's PAK weights.
 
 **A weight, never a fence.** IGNORED mutes the auto-planner only — a manual package is
-never blocked, ROE is untouched, rescue tasking is untouched. 414Ret built the fence
+never blocked, ROE is untouched, rescue tasking is untouched. RetLab built the fence
 version once (ROE zones) and removed it. This is deliberately not that.
 
 **Two axes, multiplied:**
@@ -329,7 +329,7 @@ so old saves need no migration.
 ### What this brief deliberately leaves out
 
 - **The tasking gate.** `auto_planning_skips` exists in the module but nothing calls it.
-  In 414Ret it gates `AttackShips`, `DegradeIads` and `AttackBattlePositions`. It is
+  In RetLab it gates `AttackShips`, `DegradeIads` and `AttackBattlePositions`. It is
   needed because **`enemy_ships` is threat data as well as a target list** — filtering
   the list itself would route blue over a carrier it had been told to ignore. Gate the
   tasking, never the threat picture. Without those call sites, an ignored region's ships
@@ -345,7 +345,7 @@ players.
 
 - `tests/test_region_priorities.py` passes (18 tests) — factor gates, both axes, the
   override in both directions, the ordering effect, the drops.
-- Five further tests exist in 414Ret and are omitted here because they exercise the
+- Five further tests exist in RetLab and are omitted here because they exercise the
   tasking-gate consumers above.
 - With the setting off, `planning_factor` returns `1.0` for everything and target order
   is byte-identical to today.
@@ -354,23 +354,23 @@ players.
 
 ## Not in this brief, but worth knowing
 
-**Your SLAM-ER call looks right, and 414Ret has the bug.** Your commit `4b4d2a1` removed
+**Your SLAM-ER call looks right, and RetLab has the bug.** Your commit `4b4d2a1` removed
 `AGM-84H`/`AGM-84K`/`SLAM` from the jammed set: the GPS/INS leg is only the midcourse,
 the imaging seeker comes up well outside a ~15 nm bubble, and degrading it left no sane
-way to service a jammer with a stand-off weapon at all. 414Ret still jams all three. The
+way to service a jammer with a stand-off weapon at all. RetLab still jams all three. The
 second half of that reasoning — that a feature should not remove its own counter — is the
-part 414Ret missed, and it is being taken back the other way.
+part RetLab missed, and it is being taken back the other way.
 
 **Two features where the two trees answer the same question differently**, written up
 rather than offered as patches:
 
-- **Sortie records.** Your `prev_turns` type-aggregates versus 414Ret's per-flight
+- **Sortie records.** Your `prev_turns` type-aggregates versus RetLab's per-flight
   records. Your token-cost argument is right for an LLM consumer and stops being right at
-  the second consumer — which is how 414Ret ended up with seven private `state.json`
+  the second consumer — which is how RetLab ended up with seven private `state.json`
   channels before collapsing them.
   [COMPARISON.md](sortie-records/COMPARISON.md)
 - **DTC cartridges.** Your inventory declines them because ED's auto-load is broken. It
   is not — the cause is a per-unit `AutoLoad` block that upstream does not write, and
-  414Ret's row went verified with no DTC-page interaction. The flip condition you
-  recorded has no fix to wait for. Two caveats 414Ret still carries are in the brief.
+  RetLab's row went verified with no DTC-page interaction. The flip condition you
+  recorded has no fix to wait for. Two caveats RetLab still carries are in the brief.
   [COMPARISON.md](dtc-cartridges/COMPARISON.md)

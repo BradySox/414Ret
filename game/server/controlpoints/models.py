@@ -5,7 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from game.fourteenth.region_priorities import priority_of
+from game.retlab.region_priorities import priority_of
 from game.server.leaflet import LeafletPoint
 
 if TYPE_CHECKING:

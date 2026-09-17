@@ -6,7 +6,7 @@ units:
   - "[CH] HQ-22 H-200 STR"
   - "[CH] HQ-22 LN"
   - "[CH] SX2190 Truck"
-  # 414th: battery support section
+  # RetLab: battery support section
   - Truck GAZ-66
   - Truck Ural-375
   - Truck KAMAZ 43101

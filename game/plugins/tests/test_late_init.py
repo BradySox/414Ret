@@ -67,7 +67,7 @@ def test_inject_late_init_passes_files_comment_and_preamble() -> None:
     gen.inject_late_plugin_scripts.assert_called_once()
     ident, files, comment, preamble = gen.inject_late_plugin_scripts.call_args.args
     assert ident == "tic"
-    assert files == ["TIC_v1.1.lua", "tic_414_init.lua"]
+    assert files == ["TIC_v1.1.lua", "tic_retlab_init.lua"]
     assert comment == "Load TIC_v1.1 (frontline battle sim)"
     assert preamble is not None and "GLSCO.AutoInitialize = false" in preamble
 
@@ -76,7 +76,7 @@ def test_helper_emits_one_trigger_with_all_files() -> None:
     gen = LuaGenerator.__new__(LuaGenerator)
     gen.mission = MagicMock()
     gen.inject_late_plugin_scripts(
-        "tic", ["TIC_v1.1.lua", "tic_414_init.lua"], "comment", preamble="-- pre"
+        "tic", ["TIC_v1.1.lua", "tic_retlab_init.lua"], "comment", preamble="-- pre"
     )
     assert gen.mission.map_resource.add_resource_file.call_count == 2
     gen.mission.triggerrules.triggers.append.assert_called_once()

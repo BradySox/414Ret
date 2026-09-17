@@ -11,7 +11,7 @@ groups:
         - 1
       unit_types:
         - .Command Center
-    # 414th: the headquarters compound -- the GCI/command shelters, generators
+    # RetLab: the headquarters compound -- the GCI/command shelters, generators
     # and trucks around the bunker. §52 SEMANTICS, on purpose (DM call
     # 2026-08-04): a command center counts as alive while ANY unit lives, so
     # full decapitation now requires killing the C2 vehicles too, not just

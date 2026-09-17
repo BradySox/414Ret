@@ -1,7 +1,7 @@
 """GPS jamming -> Lua config bridge (``dcsRetribution.gpsJamming``).
 
 The §85 emitter. Python owns which ground sites deny GPS and how far each
-reaches (``game/fourteenth/gps_jamming.py``); this hands the ``gpsjamming``
+reaches (``game/retlab/gps_jamming.py``); this hands the ``gpsjamming``
 plugin the runtime's whole world view:
 
 * ``sites`` -- one record per live jammer: the owning coalition, the campaign
@@ -32,7 +32,7 @@ def populate_gps_jamming_lua(
     root: "LuaData", game: "Game", mission_data: "MissionData"
 ) -> None:
     """Build the ``dcsRetribution.gpsJamming`` subtree."""
-    from game.fourteenth.gps_jamming import (
+    from game.retlab.gps_jamming import (
         GPS_GUIDED_WEAPON_PATTERNS,
         gps_jammer_sites,
         gps_jamming_enabled,
@@ -64,7 +64,7 @@ def populate_gps_jamming_lua(
         rec = site_list.add_item()
         rec.add_key_value("name", site.name)
         rec.add_key_value("coalition", site.coalition)
-        # pydcs Point: x = north, y = east (the emitter frame every 414th mover
+        # pydcs Point: x = north, y = east (the emitter frame every RetLab mover
         # plugin shares; the Lua converts to the DCS x/z world frame).
         rec.add_key_value("x", str(site.x))
         rec.add_key_value("y", str(site.y))

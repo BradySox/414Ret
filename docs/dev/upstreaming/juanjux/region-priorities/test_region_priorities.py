@@ -3,7 +3,7 @@
 Fakes are duck-typed per the local convention; narrow ignores where the real
 signatures expect engine types.
 
-The 414Ret original carries five more tests covering the tasking-gate consumers
+The RetLab original carries five more tests covering the tasking-gate consumers
 (AttackShips / DegradeIads / AttackBattlePositions). Those need the second patch,
 which is not in this payload -- see README.md.
 """

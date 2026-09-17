@@ -1,13 +1,13 @@
 name: SA-5/S-200 (Single Radar)
 tasks:
   - LORAD
-# 414th: no battalion-level P-19/P-14 -- the regiment's shared EWR site carries
+# RetLab: no battalion-level P-19/P-14 -- the regiment's shared EWR site carries
 # early warning; the battalion is Tin Shield + Square Pair + launchers.
 units:
   - SAM SA-5 S-200 ST-68U "Tin Shield" SR
   - SAM SA-5 S-200 "Square Pair" TR"
   - SAM SA-5 S-200 "Gammon" LN"
-  # 414th: battery support section
+  # RetLab: battery support section
   - Truck GAZ-66
   - Truck Ural-375
   - Refueler ATZ-5

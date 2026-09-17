@@ -1,5 +1,5 @@
 ---
-**414Ret** — the 414th Joint Fighter Group's fork of [DCS Retribution](https://github.com/dcs-retribution/dcs-retribution).
-[Download the latest build](https://github.com/BradySox/414Ret/releases/tag/latest) ·
-[Repository](https://github.com/BradySox/414Ret) ·
+**RetLab** — a development fork of [DCS Retribution](https://github.com/dcs-retribution/dcs-retribution).
+[Download the latest build](https://github.com/BradySox/RetLab/releases/tag/latest) ·
+[Repository](https://github.com/BradySox/RetLab) ·
 [Upstream wiki](https://github.com/dcs-retribution/dcs-retribution/wiki)

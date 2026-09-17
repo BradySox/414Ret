@@ -2,7 +2,7 @@
 name: Nevada - Red Flag 81-2
 era: vietnam
 theater: Nevada
-authors: 414th JFG (laydown after Reflected Simulations' F-4E Red Flag 81-2)
+authors: RetLab (laydown after Reflected Simulations' F-4E Red Flag 81-2)
 description:
     <p><strong>Nellis AFB, January 1981.</strong> Your F-4E wing detachment has arrived for
     <strong>Red Flag 81-2</strong> &mdash; the ultimate war game, flown over the Nevada
@@ -57,7 +57,7 @@ settings:
   plugins:
     vietnamops: true
   # Vietnam mechanics preseed (era pre-seed, per the design note
-  # docs/dev/design/414th-red-flag-81-campaign-notes.md section 6). Red Flag IS the
+  # docs/dev/design/retlab-red-flag-81-campaign-notes.md section 6). Red Flag IS the
   # institutionalized Vietnam feedback loop, so the whole stack applies -- except
   # naval gunfire: the NTTR has no sea.
   vietnam_arc_light: true

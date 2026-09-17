@@ -187,7 +187,7 @@ class FrontLineConflictDescription:
         Deliberately does NOT spend a pinned side's slack on the other: that
         widens fronts wherever there is terrain on one flank, and drags the
         fight off the supply crossing the two sides are contesting.
-        See docs/dev/414th-features.md §90.
+        See docs/dev/retlab-features.md §90.
         """
         half = max_width / 2
         if theater.landmap is None:

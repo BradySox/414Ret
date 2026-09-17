@@ -330,20 +330,20 @@ class Coalition:
         color = "Blue" if self.player.is_blue else "Red"
         with MultiEventTracer() as tracer:
             with tracer.trace(f"{color} mission planning"):
-                # 414th long-range carrier ops: the stock range gate leaves an
+                # RetLab long-range carrier ops: the stock range gate leaves an
                 # 800-km-standoff carrier idle, so frag one deterministic carrier
                 # package (Hornet strike + A-6 tanker + E-2) from the boat's own
                 # squadrons. Runs BEFORE the commander so it claims its carrier air
                 # first (else the commander spends the Hornets on nearer SEAD/BAI and
                 # leaves none for the package). No-op unless the setting is on.
                 with tracer.trace(f"{color} long-range carrier strike"):
-                    from game.fourteenth.carrier_ops import plan_carrier_strike
+                    from game.retlab.carrier_ops import plan_carrier_strike
 
                     plan_carrier_strike(self, now, tracer)
                 with tracer.trace(f"{color} mission identification"):
                     TheaterCommander(self.game, self.player).plan_missions(now, tracer)
                 with tracer.trace(f"{color} carrier buddy-tanker routing"):
-                    from game.fourteenth.carrier_ops import (
+                    from game.retlab.carrier_ops import (
                         route_carrier_flights_to_buddy_tanker,
                     )
 
@@ -365,7 +365,7 @@ class Coalition:
         inbound is a later phase. The manned airframes are debited from the AI QRA
         dispatcher at mission generation (``AircraftGenerator.spawn_intercept_templates``)
         so a jet is never both on the pad and air-spawned. BLUE only -- the human
-        side. See docs/dev/design/414th-qra-player-manning-notes.md.
+        side. See docs/dev/design/retlab-qra-player-manning-notes.md.
         """
         from game.ato.flight import Flight
         from game.ato.flightmember import apply_default_player_laser_code

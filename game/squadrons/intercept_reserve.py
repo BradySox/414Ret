@@ -4,7 +4,7 @@ import random
 from typing import Optional
 
 #: Probability that a single QRA scramble launches one interceptor rather than a
-#: pair. A distributed-QRA posture (the 414th's choice) prefers many bases each
+#: pair. A distributed-QRA posture (RetLab's choice) prefers many bases each
 #: putting up a small alert response over one base scrambling a large formation,
 #: so most scrambles are a single ship and a minority are 2-ships.
 QRA_SINGLE_SHIP_PROBABILITY = 0.75

@@ -1,4 +1,4 @@
-# 414th (§86) -- a placeable GPS jamming site (RED).
+# RetLab (§86) -- a placeable GPS jamming site (RED).
 #
 # Pin this onto an authored air-defence marker in a campaign's `ground_forces`
 # block to put a jamming site wherever you want it -- beside a SAM belt, on an

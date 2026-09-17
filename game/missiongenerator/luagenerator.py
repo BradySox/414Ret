@@ -323,7 +323,7 @@ class LuaGenerator:
                 "BLUE" if player.is_blue else "RED"
             ).add_data_array("DeadC2", dead_names)
 
-        # 414th QRA forward defense: bound each dispatcher to the airspace over its own
+        # RetLab QRA forward defense: bound each dispatcher to the airspace over its own
         # bases + its own side of the front, so a widened scramble radius lets rear
         # fields answer raids at the front without anyone chasing deep into enemy
         # territory. Emitted only when a dispatcher exists; an empty list means the Lua
@@ -574,7 +574,7 @@ class LuaGenerator:
             # countries would get its downed pilots on the wrong side.
             "blueCountry": str(self.game.blue.faction.country.id),
             "redCountry": str(self.game.red.faction.country.id),
-            # 414th: the ONE briefed survivor beacon channel for the mission, in Hz.
+            # RetLab: the ONE briefed survivor beacon channel for the mission, in Hz.
             # Stock Ops.CSAR draws a random channel per survivor, which cannot be
             # briefed -- the kneeboard renders before the mission runs. Pinning it
             # here is what lets the kneeboard SAR line carry a real frequency the
@@ -621,7 +621,7 @@ class LuaGenerator:
                     "true" if downed.needs_hover_extraction(settings) else "false",
                 )
 
-        # 414th: the rescue flights, for the King's on-scene systems
+        # RetLab: the rescue flights, for the King's on-scene systems
         # (resources/plugins/opscsar/KingOnScene.lua). A fixed-wing CSAR flight is
         # the King, a helicopter CSAR flight the Jolly, and a SANDY is a Sandy.
         # `player` is what lets the plugin brief only human crews, and

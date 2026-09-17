@@ -20,8 +20,8 @@ from typing import Any, Optional
 
 import pytest
 
-from game.fourteenth import pilot_profile
-from game.fourteenth.pilot_profile import (
+from game.retlab import pilot_profile
+from game.retlab.pilot_profile import (
     PilotProfile,
     load_profiles,
     mission_id,

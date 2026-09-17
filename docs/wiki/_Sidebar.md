@@ -1,4 +1,4 @@
-### 414Ret Wiki
+### RetLab Wiki
 
 **[Home](Home)**
 
@@ -21,7 +21,7 @@
 - [Vietnam Ops](Vietnam-Ops)
 
 **What the fork changes**
-- [Fork Overview](414th-Fork-Overview)
+- [Fork Overview](RetLab-Fork-Overview)
 
 **Modding**
 - [Custom Campaigns](Custom-Campaigns)
@@ -30,7 +30,7 @@
 - [Custom Loadouts](Custom-Loadouts)
 - [Lua Plugins](Lua-Plugins)
 - [Modded aircraft/unit support](Modded-Unit-Support)
-- [Layouts](https://github.com/BradySox/414Ret/blob/main/docs/modding/layouts.rst)
+- [Layouts](https://github.com/BradySox/RetLab/blob/main/docs/modding/layouts.rst)
 
 **Servers**
 - [Dedicated Server Guide](Dedicated-Server-Guide)

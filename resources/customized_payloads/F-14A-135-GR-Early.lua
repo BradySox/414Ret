@@ -1,4 +1,4 @@
--- Upstream stock presets + the 414th "Retribution TARPS" recon fit appended,
+-- Upstream stock presets + RetLab "Retribution TARPS" recon fit appended,
 -- and the unitType field corrected (see the comment at the bottom).
 local unitPayloads = {
 	["name"] = "F-14A",

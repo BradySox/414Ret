@@ -1,7 +1,7 @@
 ---
 name: Syria - Anatolian Reach
 theater: Syria
-authors: 414th Joint Fighter Group
+authors: RetLab
 recommended_player_faction: USA-Israel 2000
 description:
   <p>In 2004 a rupture between Ankara and Washington ends with Turkish airspace
@@ -29,7 +29,7 @@ description:
 recommended_enemy_faction:
   country: Combined Joint Task Forces Red
   name: Turkey-Russia 2004 (Anatolian Reach)
-  authors: 414th Joint Fighter Group
+  authors: RetLab
   description:
     <p>The Ankara-Moscow air-defence protocol of 2004, with Syria as the third
     partner. Turkish F-16s and Phantoms in the west and south; Russian

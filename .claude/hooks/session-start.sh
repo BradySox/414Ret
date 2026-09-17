@@ -1,10 +1,10 @@
 #!/bin/bash
-# SessionStart hook: surface the 414th in-game-pass checklist status board so
+# SessionStart hook: surface RetLab in-game-pass checklist status board so
 # Claude can present it to the user at the start of every session. Read-only;
 # prints to stdout, which Claude Code adds to the session context.
 set -euo pipefail
 
-md="${CLAUDE_PROJECT_DIR:-.}/docs/dev/414th-ingame-pass-checklist.md"
+md="${CLAUDE_PROJECT_DIR:-.}/docs/dev/retlab-ingame-pass-checklist.md"
 [ -f "$md" ] || exit 0   # checklist absent (e.g. stale checkout) — nothing to do
 
 # Rows are `### ` headings ONLY. `## ` section headings are not rows, and one of
@@ -37,7 +37,7 @@ statuses="$(printf '%s\n' "$headings" | awk "$STATUS_FN"'
 ')"
 count() { printf '%s\n' "$statuses" | grep -cFx "$1" || true; }
 
-echo "=== 414th in-game-pass checklist ==="
+echo "=== RetLab in-game-pass checklist ==="
 echo "verified $(count VERIFIED) | untested $(count UNTESTED) | partial $(count PARTIAL) | regressed $(count REGRESSED) | closed $(( $(count RETIRED) + $(count REMOVED) + $(count CLOSED) ))"
 echo
 
@@ -56,7 +56,7 @@ else
   echo "All tracked rows verified — nothing outstanding."
 fi
 echo
-echo "Source: docs/dev/414th-ingame-pass-checklist.md"
+echo "Source: docs/dev/retlab-ingame-pass-checklist.md"
 
 # --- the fly cards ----------------------------------------------------------
 # Two standing cards, same format, parsed by one function so they can never

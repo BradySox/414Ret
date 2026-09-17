@@ -2,9 +2,9 @@
 
 > **Adopted standard (2026-07-20).** This page is the upstream
 > [Modded aircraft/unit support](https://github.com/dcs-retribution/dcs-retribution/wiki/Modded-Unit-Support)
-> guide, adopted as the 414th's own standard for shipping mod support — every mod pack
+> guide, adopted as RetLab's own standard for shipping mod support — every mod pack
 > in this fork (the CurrentHill packs, High Digit SAMs, Vietnam War Vessels, the F-4E
-> weapons pack, …) follows these steps. Fork-specific rules are called out in **414th:**
+> weapons pack, …) follows these steps. Fork-specific rules are called out in **RetLab:**
 > notes. When upstream revises their page, refresh this one.
 
 > Hey, can you add support for &lt;insert mod name here&gt;?
@@ -78,18 +78,18 @@ in this file, and add it to a custom file. Your mod might have added new weapons
 they'll be found in `weapons.py`, and you have to fetch them as well.
 
 Example extensions in this fork's
-[`pydcs_extensions/`](https://github.com/BradySox/414Ret/tree/main/pydcs_extensions)
+[`pydcs_extensions/`](https://github.com/BradySox/RetLab/tree/main/pydcs_extensions)
 folder:
 
 * The popular A-4E-C mod:
-  [`pydcs_extensions/a4ec/a4ec.py`](https://github.com/BradySox/414Ret/blob/main/pydcs_extensions/a4ec/a4ec.py)
+  [`pydcs_extensions/a4ec/a4ec.py`](https://github.com/BradySox/RetLab/blob/main/pydcs_extensions/a4ec/a4ec.py)
 * A CurrentHill assets pack:
-  [`pydcs_extensions/usamilitaryassetspack/`](https://github.com/BradySox/414Ret/tree/main/pydcs_extensions/usamilitaryassetspack)
+  [`pydcs_extensions/usamilitaryassetspack/`](https://github.com/BradySox/RetLab/tree/main/pydcs_extensions/usamilitaryassetspack)
 
 These files contain a lot of metadata we need to be able to generate missions, such as
 possible liveries, possible payloads for each pylon, specific weapon ids, and so on.
 
-**414th:** read the installed mod's own `Database/*.lua` files as the source of truth
+**RetLab:** read the installed mod's own `Database/*.lua` files as the source of truth
 for unit ids and data when the export is ambiguous — that's how the High Digit SAMs
 Ultimate Compilation and Vietnam War Vessels updates were built here.
 
@@ -128,7 +128,7 @@ an aircraft that **already exists** in base DCS (e.g. CJS Super Hornet reworks t
 F/A-18), the new weapons must be grafted onto that existing aircraft's pylons. Use
 `pydcs_extensions/pylon_injector.py` for this — it injects ordnance from a mod's custom
 pylon class onto the pylons of an existing stock pydcs aircraft via introspection,
-rather than defining a whole new plane type. (**414th:** the F-4E expanded weapons pack
+rather than defining a whole new plane type. (**RetLab:** the F-4E expanded weapons pack
 is this fork's reference implementation of the graft pattern.)
 
 If your mod ships custom DCS cloud presets (e.g. Bandit's Cloud Presets), inject them
@@ -164,7 +164,7 @@ pattern:
 plus the checkbox + `registerField` wiring and the labeled entry (with the supported mod
 version in the label, e.g. `"A-4E Skyhawk (v2.2.0)"`) on the wizard's mods list.
 
-**414th:** two fork rules here:
+**RetLab:** two fork rules here:
 
 * The wizard has a dedicated, grouped **Mods page** (Aircraft / Asset packs / Air
   defense) that curates which of the ~50 `ModSettings` toggles are surfaced — a new mod
@@ -209,7 +209,7 @@ weights are only guidelines** — use them to give Retribution hints about which
 are better at each task.
 
 For an overview of all tasks and weights in Retribution, run the `dump-task-priorities`
-subcommand (**414th:** `retribution_main.exe dump-task-priorities`, or
+subcommand (**RetLab:** `retribution_main.exe dump-task-priorities`, or
 `PYTHONPATH=. python ./qt_ui/main.py dump-task-priorities` from sources). That will dump
 `Debug/priorities.yaml` to your DCS Saved Games directory.
 
@@ -221,7 +221,7 @@ has_built_in_ecm: true      # self-protection ECM without an external pod (e.g. 
 has_built_in_jamming: true  # offensive jamming without an ALQ-99/249 pod
 ```
 
-**414th:** `has_built_in_jamming` fed upstream's generic EW Jammer Script plugin, which
+**RetLab:** `has_built_in_jamming` fed upstream's generic EW Jammer Script plugin, which
 this fork retired — electronic warfare here is the C-130J JAMMING platform (see
 [Electronic Warfare & ISR](Electronic-Warfare-and-ISR)). The flag still parses but has
 no fork consumer; set it for upstream parity only.
@@ -246,10 +246,10 @@ variants:
   "[CH] KrAZ-6322 Truck": {}
 ```
 
-**414th:** hold new aircraft yamls to the fork's extra unit-data standards — honest
+**RetLab:** hold new aircraft yamls to the fork's extra unit-data standards — honest
 `max_range`, real `introduced` dates (they feed era gating), task weights per the
 rebalance rubric, `TARPS`/drone/heavy-bomber set membership — see the
-[aircraft module checklist's 414th additions](Module-Checklists).
+[aircraft module checklist's RetLab additions](Module-Checklists).
 Unit prices matter beyond the budget here too (e.g. the COIN insurgent whitelist is
 price-capped), so compare against similar shipped units rather than guessing.
 
@@ -257,7 +257,7 @@ price-capped), so compare against similar shipped units rather than guessing.
 
 See [Custom Loadouts](Custom-Loadouts). Create default loadouts for the new plane.
 
-**414th:** if the mod's stores should only be *preferred* when the mod is installed, use
+**RetLab:** if the mod's stores should only be *preferred* when the mod is installed, use
 the expanded-weapons payload convention — fits named with the `" (XW)"` suffix are tried
 first but only picked while every store verifies against the live pylon tables, with the
 stock fit as the automatic fallback. If the mod adds weapons in a scarce class
@@ -272,7 +272,7 @@ factions. If there are no appropriate factions, create a new one, but you don't 
 worry about breaking existing factions by "requiring" the mod; Retribution will filter
 out mods that the player doesn't use.
 
-**414th:** wire factions era-respectfully — a 1988 faction doesn't get a 2007 drone just
+**RetLab:** wire factions era-respectfully — a 1988 faction doesn't get a 2007 drone just
 because the pack ships one (the fork's faction era-audit tests are the pattern to copy),
 and note the mod version in the faction's `requirements` string so stale pins are
 findable.
@@ -313,7 +313,7 @@ Note: since v1.6.0 the compiled layout binary cache carries a content signature,
 layouts change the stale binary is detected and regenerated automatically. You no longer
 need to manually delete the cache file after editing layouts.
 
-**414th:** new SAM layouts follow the fork's site-redundancy standard — legacy-system
+**RetLab:** new SAM layouts follow the fork's site-redundancy standard — legacy-system
 layouts field **two** guidance radars (the anti-single-HARM rule; the shared `.miz`
 templates carry the second radar position), while strategic systems prefer the
 regiment-by-authoring pattern at the campaign layer instead. See
@@ -335,7 +335,7 @@ from pydcs_extensions import usamilitaryassetspack as usamap
     usamap.CH_THAAD_ANTPY2,
 ```
 
-**414th:** a modded radar SAM also needs a Skynet profile (`samTypesDB` in the fork's compiled
+**RetLab:** a modded radar SAM also needs a Skynet profile (`samTypesDB` in the fork's compiled
 `skynet-iads-compiled.lua`) or it fights alone as vanilla AI; the HDSUC and CurrentHill packs
 are already covered. The radar db entries matter too — HARM/SEAD targeting and ship-radar
 classification read them.
@@ -350,7 +350,7 @@ pixels, both in JPEG format.
 
 Play a few missions with the plane; test as many cases as you can.
 
-**414th:** also run the headless side — load a campaign fielding the mod with the toggle
+**RetLab:** also run the headless side — load a campaign fielding the mod with the toggle
 ON and OFF and verify units resolve/strip both ways (the fork's mod-pack tests under
 `tests/` show the pattern), and give the feature an in-game-pass checklist row if it has
 runtime behavior CI can't exercise.
@@ -361,7 +361,7 @@ Release the mod support. Then maintain it: redo the data export (Step 1) every t
 mod is updated, and — if needed — create new loadouts and account for new capabilities
 in the databases.
 
-**414th:** one hard rule on top of all of the above — **Lua plugins reference vanilla
+**RetLab:** one hard rule on top of all of the above — **Lua plugins reference vanilla
 DCS units only.** A plugin script that names a modded unit dies at runtime for anyone
 without the mod; mod awareness stays on the Python side, where `ModSettings` gates it.
 Liveries are deliberately left un-authored unless verified against an installed DCS

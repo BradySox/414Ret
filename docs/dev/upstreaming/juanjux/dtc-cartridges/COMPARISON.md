@@ -4,7 +4,7 @@ Not a carve. A correction to one line in his inventory, with the evidence behind
 
 ## What his ledger says
 
-`inventario_fork_414ret.txt`, entry `[A] #1` (DTC export), decision **NO**:
+`inventario_fork_retlab.txt`, entry `[A] #1` (DTC export), decision **NO**:
 
 > Motivo NO: el auto-load al inicio de misión de ED está ROTO -> carga manual por
 > salida; default ON pese a los docs. Poco práctico hoy.

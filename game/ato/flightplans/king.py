@@ -1,6 +1,6 @@
 """The fixed-wing CSAR on-scene commander -- the HC-130 "King".
 
-See docs/dev/design/414th-csar-notes.md.
+See docs/dev/design/retlab-csar-notes.md.
 
 The King never picks anyone up: the DCS AI ``Land`` task is helicopter-only, so a
 fixed-wing rescuer would orbit a survivor forever. ``CsarFlightPlan`` refuses to

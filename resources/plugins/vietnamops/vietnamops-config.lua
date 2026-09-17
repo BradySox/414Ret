@@ -6,7 +6,7 @@
 -- Each sub-feature is present in the table ONLY when its 'Vietnam Ops' setting is on, so
 -- this plugin gates purely on data presence -- inert (early-return) for a non-Vietnam
 -- mission. Vanilla DCS + bundled MOOSE only; pcall-guarded so a malformed record degrades
--- to a logged warning, never a CTD. See docs/dev/design/414th-vietnam-ops-notes.md.
+-- to a logged warning, never a CTD. See docs/dev/design/retlab-vietnam-ops-notes.md.
 --
 -- Phase 1 -- Arc Light: a heavy-bomber Strike (B-52, etc.) walks a carpet of explosions
 -- across its target at the run-in, modelling the Operation Niagara Arc Light strikes. The
@@ -544,7 +544,7 @@ end
 -- Models the Khe Sanh "Super Gaggle": a formation of transport helos (with a fast-mover
 -- AAA-suppression flight) runs supplies into a cut-off forward friendly outpost while the
 -- player can fly escort. The airframes are DRAWN FROM REAL BLUE SQUADRONS (§37): the
--- generator (game/fourteenth/super_gaggle.py) picks real helo + attack squadrons and emits
+-- generator (game/retlab/super_gaggle.py) picks real helo + attack squadrons and emits
 -- the exact per-unit names (superGaggle.helo.names / superGaggle.suppressor.names) + their
 -- squadron aircraft types. This spawns EXACTLY those airframes, by name, ONCE -- there is no
 -- respawn loop (airframes are bounded to the commitment; the old unbounded free helos are

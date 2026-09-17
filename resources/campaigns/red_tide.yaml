@@ -1,7 +1,7 @@
 ---
 name: Germany - Red Tide
 theater: GermanyCW
-authors: Starfire, 414th JFG
+authors: Starfire, RetLab
 recommended_player_faction: Blufor Late Cold War (80s)
 recommended_enemy_faction: Russia 1980 (Red Tide)
 description:
@@ -10,7 +10,7 @@ description:
   over Copenhagen. For a few desperate days it looked as though nothing could stop them.</p>
   <p>Then the offensive ran dry. Outrunning its own fuel and ground down by NATO airpower, the Soviet
   spearhead has culminated -- overextended, exposed, and not yet dug in. The line has held, and now the
-  initiative changes hands. NATO is going over to the attack, and the 414th Joint Fighter Group leads it --
+  initiative changes hands. NATO is going over to the attack --
   American Eagles and Tomcats wing-to-wing with the Luftwaffe's own JG 74 'Moelders' Phantoms -- clawing
   back the skies over Central Europe and opening the road to retake Hamburg, liberate Copenhagen, and drive
   the Red Army back east.</p>
@@ -162,7 +162,7 @@ settings:
   # Block 50s and Lot 20s would spawn with a 2003 helmet in a July 1988 campaign.
   restrict_props_by_date: true
   # Human-led offensive: keep the blue auto-planner cautious so the AI fills fewer of
-  # the ATO's offensive slots and the human's 414th sorties (F-16CM/F-A-18C/F-15E/
+  # the ATO's offensive slots and the human's player sorties (F-16CM/F-A-18C/F-15E/
   # F-14B/A-10C) carry the push. Recommended NEW-GAME defaults; the player can
   # still change them in the wizard.
   #
@@ -253,7 +253,7 @@ settings:
     # see the HOST: Red Scramble menu.
     redscramble.hostPlayers: Flash
 squadrons:
-  #Ramstein — rear heavy-iron + the eyes: the B-52s, the 414th Strike Eagles, and the E-3A.
+  #Ramstein — rear heavy-iron + the eyes: the B-52s, the Strike Eagles, and the E-3A.
   165:
     # §82 The Wing Grows — the heavy stick, once blue owns enough of the sky to
     # fly it. Red Tide opens DEFENSIVELY (holding the Gap), so its arc is
@@ -290,14 +290,14 @@ squadrons:
     - primary: DEAD
       secondary: any
       aircraft:
-        - 414th Voodoo Squadron
+        - 23rd FS
       aircraft_type: F-16CM Fighting Falcon (Block 50)
       callsign: Voodoo
       size: 12
     - primary: SEAD
       secondary: any
       aircraft:
-        - 414th JFG Hornets
+        - VMFA-251
       aircraft_type: F/A-18C Hornet (Lot 20)
       callsign: Wizards
       size: 12
@@ -401,7 +401,7 @@ squadrons:
     - primary: Air Assault
       secondary: any
       aircraft:
-        - 414th Aviation Detachment
+        - HMLA-269 (UH-1H)
       aircraft_type: UH-1H Iroquois
       size: 4
     - primary: Escort

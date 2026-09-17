@@ -10,7 +10,7 @@ jets and drop silently when not, so the top-priority target absorbs the strike f
 and later strike targets shrink instead of scrubbing. The fan was briefly reverted to
 1 when the sections flew naked; restored once the fighter economy held
 (escort_support_aircraft off + strike_escort_reserve + its fence). See
-docs/dev/design/414th-vietnam-retribution-notes.md (P3).
+docs/dev/design/retlab-vietnam-retribution-notes.md (P3).
 """
 
 from __future__ import annotations

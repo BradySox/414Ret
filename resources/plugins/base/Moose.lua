@@ -7242,7 +7242,7 @@ Side="I",
 Event="OnEventWeaponDrop",
 Text="S_EVENT_WEAPON_DROP"
 },
--- 414Ret patch (task-complete rows): upstream declares UnitTaskComplete/UnitTaskStage
+-- RetLab patch (task-complete rows): upstream declares UnitTaskComplete/UnitTaskStage
 -- in EVENTS with no _EVENTMETA rows. Added 2026-08-29 as the event-61 fix, which they
 -- are not (ids 49/50). Kept as upstream-shaped rows; the event-61 guard is in onEvent.
 [EVENTS.UnitTaskComplete]={
@@ -7886,7 +7886,7 @@ else
 self:T({EventMeta.Text,Event})
 end
 else
--- 414Ret patch (event 61 spam): DCS 2.9.29 raises an undocumented event 61 on every
+-- RetLab patch (event 61 spam): DCS 2.9.29 raises an undocumented event 61 on every
 -- controller option change; TIC's ROE cycling makes that ~10/s. Mirrors the guard in
 -- upstream develop's Event.lua; drop it once the bundle is bumped past that commit.
 if Event.id~=61 then
@@ -42056,7 +42056,7 @@ return nil
 end
 local group=self:SpawnWithIndex(self.SpawnIndex)
 local groupname=group:GetName()
--- 414Ret patch (civilian_traffic crash guard): SpawnWithIndex above has already
+-- RetLab patch (civilian_traffic crash guard): SpawnWithIndex above has already
 -- spawned a LIVE DCS group. A freshly spawned unit can briefly have a nil descriptor
 -- (DCS object not yet ready / "Corrupt damage model"); FLIGHTGROUP:New then errors on
 -- the nil 'descriptors' and the xpcall in the scheduler swallows it, leaving the
@@ -42067,7 +42067,7 @@ local groupname=group:GetName()
 -- unit. Re-apply this guard if Moose.lua is refreshed from upstream.
 local _fgok,flightgroup=pcall(FLIGHTGROUP.New,FLIGHTGROUP,group)
 if not(_fgok and flightgroup)then
-self:E(self.lid..string.format("414Ret: FLIGHTGROUP:New failed for spawn index %d (%s): %s. Scheduling deferred despawn of orphan civilian spawn.",self.SpawnIndex,tostring(groupname),tostring(flightgroup)))
+self:E(self.lid..string.format("RetLab: FLIGHTGROUP:New failed for spawn index %d (%s): %s. Scheduling deferred despawn of orphan civilian spawn.",self.SpawnIndex,tostring(groupname),tostring(flightgroup)))
 -- Do NOT destroy synchronously: the unit is mid-birth this frame (its descriptor is
 -- still nil -- that's why FLIGHTGROUP:New failed), and destroying a half-constructed
 -- unit corrupts engine state and crashes the sim just as the orphan would. Defer the
@@ -43150,7 +43150,7 @@ end
 self:_SetStatus(SpawnGroup,status)
 local i=self:GetSpawnIndexFromGroup(SpawnGroup)
 local ratcraft=self.ratcraft[i]
--- 414Ret patch (civilian_traffic crash guard): defense-in-depth for the orphan case
+-- RetLab patch (civilian_traffic crash guard): defense-in-depth for the orphan case
 -- above. If the birth event fires for a group whose ratcraft bookkeeping was never
 -- created (FLIGHTGROUP:New failed during _SpawnWithRoute), the group is unmanaged.
 -- Despawn it directly -- NOT via self:_Despawn, which itself indexes self.ratcraft[i]
@@ -43158,7 +43158,7 @@ local ratcraft=self.ratcraft[i]
 -- indexing nil here and leaving the orphan for the sim loop to crash on.
 if not ratcraft then
 local _orphan_name=SpawnGroup:GetName()
-self:E(self.lid..string.format("414Ret: birth event for unmanaged RAT group %s (no ratcraft #%s); scheduling deferred despawn.",tostring(_orphan_name),tostring(i)))
+self:E(self.lid..string.format("RetLab: birth event for unmanaged RAT group %s (no ratcraft #%s); scheduling deferred despawn.",tostring(_orphan_name),tostring(i)))
 -- Deferred despawn (see _SpawnWithRoute): never destroy a mid-birth unit synchronously
 -- -- it crashes the sim. Look the group up fresh by name a few seconds later and
 -- destroy it only if it still exists. Not via self:_Despawn, which indexes the same

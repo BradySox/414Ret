@@ -15,7 +15,7 @@ from typing import Optional
 
 from PySide6.QtWidgets import QDialog, QLabel, QTextBrowser, QVBoxLayout
 
-from game.fourteenth.career import awards_held, career_lines, rank_for
+from game.retlab.career import awards_held, career_lines, rank_for
 from game.squadrons.pilot import Pilot, PilotStatus
 from game.squadrons.squadron import Squadron
 

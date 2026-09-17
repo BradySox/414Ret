@@ -1,6 +1,6 @@
 # Region priorities (core)
 
-414Ret §93, landed 2026-08-20 — two days after his review window closed, so it is not in
+RetLab §93, landed 2026-08-20 — two days after his review window closed, so it is not in
 any of his ledgers.
 
 ## What it is
@@ -35,7 +35,7 @@ Off by default (`region_priorities`, Campaign Doctrine → General).
 
 **In — the engine.** It works with no UI at all; the fields are ordinary attributes.
 
-- `game/regionpriorities.py` (new, 176 lines) — renamed off our `game/fourteenth/`
+- `game/regionpriorities.py` (new, 176 lines) — renamed off our `game/retlab/`
   package. Self-contained: duck-typed `getattr` access throughout, `ControlPoint`
   imported only inside functions, so there is no import cycle.
 - `objectivefinder.py` — the weighting, at both sort sites (`_targets_by_range` gains a

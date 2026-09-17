@@ -19,7 +19,7 @@ class PilotRecord:
     only aircraft that actually flew. The two therefore disagree, deliberately:
     changing ``missions_flown`` would move every AI pilot's skill tier.
 
-    See docs/dev/414th-features.md §96.
+    See docs/dev/retlab-features.md §96.
     """
 
     missions_flown: int = field(default=0)

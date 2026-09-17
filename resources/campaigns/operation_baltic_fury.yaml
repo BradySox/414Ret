@@ -1,7 +1,7 @@
 ---
 name: Germany - Baltic Fury
 theater: GermanyCW
-authors: 414th JFG
+authors: RetLab
 recommended_player_faction: NATO Baltic 2027
 recommended_enemy_faction: Redfor (Russia) 2020
 description: >
@@ -12,7 +12,7 @@ description: >
   changes hands, and it comes from the sea.</p>
   <p>The United States Sixth Fleet is in the German Bight. A carrier strike group built around
   USS Harry S. Truman steams off the Frisian coast, its Super Hornet wing wing-to-wing with the
-  414th Joint Fighter Group's Raptors and Strike Eagles surging into Nordholz. Ahead lies the
+  RetLab's Raptors and Strike Eagles surging into Nordholz. Ahead lies the
   hardest air-defense problem in Europe: a coastal anti-ship wall of Bastion-P and Bal missiles
   that keeps the fleet at arm's length, S-400 regiments over Rostock and Copenhagen, and the
   Baltic Fleet loose in the approaches.</p>
@@ -143,7 +143,7 @@ settings:
   # with beyond-era kit (both toggles; §24 split restrict_props off restrict_weapons).
   restrict_weapons_by_date: true
   restrict_props_by_date: true
-  # Human-led counter-offensive: keep the blue auto-planner cautious so the 414th's sorties
+  # Human-led counter-offensive: keep the blue auto-planner cautious so RetLab's sorties
   # (the SEAD/anti-ship push into the coastal belt) are the player's to fly.
   ownfor_autoplanner_aggressiveness: 10
   oca_target_autoplanner_min_aircraft_count: 40
@@ -228,7 +228,7 @@ squadrons:
     - primary: TARCAP
       secondary: air-to-ground
       aircraft:
-        - 414th JFG Rhinos
+        - RetLab Rhinos
       aircraft_type: F/A-18E Super Hornet
       callsign: Victory
       size: 12
@@ -238,7 +238,7 @@ squadrons:
     - primary: Strike
       secondary: air-to-ground
       aircraft:
-        - 414th Strike Rhinos
+        - RetLab Strike Rhinos
       aircraft_type: F/A-18F Super Hornet
       callsign: Hammer
       size: 10
@@ -266,12 +266,12 @@ squadrons:
         - HSC Plane Guard
       aircraft_type: SH-60B Seahawk
       size: 2
-  # ★ Nordholz (47) — the 414th land wing: Raptors + Strike Eagles.
+  # ★ Nordholz (47) — RetLab land wing: Raptors + Strike Eagles.
   47:
     - primary: TARCAP
       secondary: air-to-air
       aircraft:
-        - 414th Raptor Squadron
+        - RetLab Raptor Squadron
       aircraft_type: F-22A Raptor
       callsign: Vader
       size: 12

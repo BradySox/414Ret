@@ -2,7 +2,7 @@
 
 Built 2026-08-24. Three apply-ready patches and two comparison briefs, prepared for
 the second fork we watch — see
-[414th-juanjux-fork-watch-notes.md](../../design/414th-juanjux-fork-watch-notes.md).
+[retlab-juanjux-fork-watch-notes.md](../../design/retlab-juanjux-fork-watch-notes.md).
 
 **These target his tree, not upstream `dev`.** Every patch was generated against
 `juanjux/dcs-retribution@ca780fd2` and verified to apply there. That is the whole point:
@@ -35,7 +35,7 @@ git apply naval-station-keeping/station-keeping.patch \
 
 ## Why these five
 
-His own inventory of our fork (`inventario_fork_414ret.txt`, his repo root) sets the
+His own inventory of our fork (`inventario_fork_retlab.txt`, his repo root) sets the
 bar: pure Python, self-contained, no MOOSE, "clearly worth the maintenance". His
 README's 2026-08 review covered our commits to 2026-08-22 and queued §90, §69 and the
 §78 convoy half.
@@ -53,7 +53,7 @@ README's 2026-08 review covered our commits to 2026-08-22 and queued §90, §69 
 
 ## Fork identity stripped
 
-The patches carry no `§N` markers, no `game/fourteenth/` package, and no pointers into
+The patches carry no `§N` markers, no `game/retlab/` package, and no pointers into
 `docs/dev/`. `region_priorities.py` is renamed `game/regionpriorities.py`. Comments that
 cited a fork design note were cut rather than re-pointed at a file he does not have.
 

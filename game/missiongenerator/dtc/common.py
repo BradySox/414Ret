@@ -175,7 +175,7 @@ def steerpoint_altitude(waypoint: FlightWaypoint, game: Game) -> float:
     number: the planned altitude on an en-route point, the ground under a
     ground-marked one (the .miz puts those at 0 AGL for a client flight).
     Nothing honours an AGL tag on the point, so an AGL plan is converted with
-    the nearest field's elevation. Design note: 414th-dtc-cartridge-notes.md.
+    the nearest field's elevation. Design note: retlab-dtc-cartridge-notes.md.
     """
     if waypoint.marks_ground_for_player:
         return nearest_field_elevation(game, waypoint.position.x, waypoint.position.y)

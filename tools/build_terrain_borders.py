@@ -30,7 +30,7 @@ Usage:
         --clip 24 38 59.5 73
 
 Country land shares per map -- and which ones the eyeball misses -- are measured
-in ``docs/dev/design/414th-national-postures-notes.md``. Use that table for the
+in ``docs/dev/design/retlab-national-postures-notes.md``. Use that table for the
 ``--countries`` list; it caught India on Afghanistan and Saudi Arabia on Syria.
 """
 

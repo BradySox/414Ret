@@ -24,7 +24,7 @@ Three measurements, none of which needs an LLM, a feature, or a flight:
    SAM belt you never tried to suppress is a decision that reads wrong in the air,
    which is the kind of evidence the note asks for before reopening the seam.
 
-The card is `docs/dev/design/414th-red-brain-phase0-notes.md`. Read it before
+The card is `docs/dev/design/retlab-red-brain-phase0-notes.md`. Read it before
 changing anything here: the thresholds are pre-registered and this is only the
 instrument. Sibling of `tools/measure_red_axis_persistence.py`, which measures the
 axis dimension the first framing died on.

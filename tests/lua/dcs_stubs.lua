@@ -6,7 +6,7 @@
 -- clock driving timer.scheduleFunction, recording trigger.action.* calls, and
 -- a tiny unit/group world the tests populate. It does NOT model DCS AI, LoS,
 -- physics, or weapons flight; anything behavioral still needs the in-game pass
--- (docs/dev/414th-ingame-pass-checklist.md). What it catches is the class of
+-- (docs/dev/retlab-ingame-pass-checklist.md). What it catches is the class of
 -- "the script errors at file scope / in a timer tick and the feature silently
 -- never runs" bug that luac -p cannot see.
 --

@@ -4,7 +4,7 @@
 -- DCS' default Evade Fire breaks EVERY aircraft that merely perceives a launch, so one naval or
 -- S-300 salvo scatters dozens of jets from unrelated packages. This parks every airplane at
 -- Passive Defense and flips only the group weapon:getTarget() names, until that missile is gone.
--- docs/dev/design/414th-ai-threat-reaction-notes.md.
+-- docs/dev/design/retlab-ai-threat-reaction-notes.md.
 --
 -- Constraints, each learned the expensive way -- do not undo:
 --   * The target comes from the native weapon:getTarget(), never from geometry. Guessing which

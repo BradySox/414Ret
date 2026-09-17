@@ -29,7 +29,7 @@ tasks:
   Air Assault: 40
   Transport: 140
   Jamming: 140
-  # The "King" CSAR role, kept as a deliberate 414th override (2026-08-07 squadron call).
+  # The "King" CSAR role, kept as a deliberate RetLab override (2026-08-07 squadron call).
   #
   # Upstream derives CSAR capability from the airframe and restricts it to HELICOPTERS with a
   # positive cabin size, on the grounds that the DCS AI `Land` task is helicopter-only, so a
@@ -46,7 +46,7 @@ tasks:
   # a helo's lets it frag a King for a rescue no AI can finish -- the pickup silently never
   # happens, with no error anywhere.
   #
-  # The floor is LOWER than the 414th's own eight rescue yamls suggest: upstream derives CSAR
+  # The floor is LOWER than RetLab's own eight rescue yamls suggest: upstream derives CSAR
   # from the airframe, so 27 airframes are capable, and the cheapest is the Mi-24V at 10 (the
   # Hind is a gunship with a small cabin, so its derived number is low). 5 clears all of them.
   # tests/test_csar_king_priority.py pins this against the LIVE fleet, so adding a mod helo with

@@ -55,8 +55,8 @@ from .weather.conditions import Conditions
 if TYPE_CHECKING:
     from .ato.airtaaskingorder import AirTaskingOrder
     from .factions.faction import Faction
-    from .fourteenth.super_gaggle import SuperGaggleCommitment
-    from .fourteenth.victory import VictoryBaseline
+    from .retlab.super_gaggle import SuperGaggleCommitment
+    from .retlab.victory import VictoryBaseline
     from .navmesh import NavMesh
     from .sim import GameUpdateEvents
     from .squadrons import AirWing
@@ -147,23 +147,23 @@ class Game:
         self.red_tempo_announced_window: Optional[str] = None
         # COIN C1 per-CP regen anchors (garrison cap / cache total / fractional
         # carry), keyed by str(cp.id). Plain primitives so saves stay simple;
-        # populated lazily by game.fourteenth.coin when coin_insurgency is on.
+        # populated lazily by game.retlab.coin when coin_insurgency is on.
         self.coin_state: dict[str, dict[str, Any]] = {}
         # §50 convoy escort / ambush: this turn's ambush pairings ({"ambushes": [{tgo_id,
         # convoy}]}), seeded at finish_turn, read by the emitter + the escort auto-frag.
-        # Plain primitives; populated lazily by game.fourteenth.convoy_ambush when on.
+        # Plain primitives; populated lazily by game.retlab.convoy_ambush when on.
         self.convoy_ambush_state: dict[str, Any] = {}
         # §63 cruise missile raids: each LACM ship group's remaining missile stock,
         # keyed by the stable TheaterGroup.group_name — seeded on first sight, debited
         # at the turn boundary from what the plugin reports fired (never at
-        # generation). Lazily populated by game.fourteenth.cruise_raids when
+        # generation). Lazily populated by game.retlab.cruise_raids when
         # cruise_missile_strikes is on. There is no rearm.
         self.cruise_missile_magazines: dict[str, int] = {}
         # §81 cross-turn naval magazines: each naval group's remaining ANTI-SHIP
         # missile stock, keyed by the same stable TheaterGroup.group_name — seeded
         # on first sight, debited at the turn boundary from what the plugin reports
         # fired (never at generation). Lazily populated by
-        # game.fourteenth.naval_magazines when naval_magazines is on. A disjoint
+        # game.retlab.naval_magazines when naval_magazines is on. A disjoint
         # weapon set from the §63 magazine above, so the two never double-charge.
         # There is no rearm.
         self.naval_magazines: dict[str, int] = {}
@@ -478,8 +478,8 @@ class Game:
         # convoy flowing on the trail corridor to interdict (replacing the old phantom
         # runtime spawn). Once per turn, after transfers are processed and the network is
         # current; a no-op unless the setting is on and a real corridor + spare rear units
-        # exist. See game/fourteenth/vietnam_convoy.py.
-        from game.fourteenth.vietnam_convoy import ensure_enemy_trail_convoy
+        # exist. See game/retlab/vietnam_convoy.py.
+        from game.retlab.vietnam_convoy import ensure_enemy_trail_convoy
 
         ensure_enemy_trail_convoy(self)
 
@@ -488,8 +488,8 @@ class Game:
         # some spread out -- so the theater has traffic to protect, hunt, and simply
         # see. Counts the §35 trail convoys above toward its target, so Vietnam's
         # trail war is unchanged. No-op unless ambient_supply_convoys is on, or for
-        # a side with no same-side road. See game/fourteenth/ambient_convoys.py.
-        from game.fourteenth.ambient_convoys import ensure_ambient_convoys
+        # a side with no same-side road. See game/retlab/ambient_convoys.py.
+        from game.retlab.ambient_convoys import ensure_ambient_convoys
 
         ensure_ambient_convoys(self)
 
@@ -498,17 +498,17 @@ class Game:
         # Nothing is telegraphed in the UI (map_hidden TGOs, no auto-fragged escort);
         # the player decides in-mission whether to support the column. No-op unless
         # convoy_ambush is on. Real units both sides -- losses track natively. See
-        # game/fourteenth/convoy_ambush.py.
-        from game.fourteenth.convoy_ambush import seed_convoy_ambushes
+        # game/retlab/convoy_ambush.py.
+        from game.retlab.convoy_ambush import seed_convoy_ambushes
 
         seed_convoy_ambushes(self, events)
 
-        # COIN C1 (design note 414th-coin-insurgent-replenishment-notes.md §3):
+        # COIN C1 (design note retlab-coin-insurgent-replenishment-notes.md §3):
         # insurgent-held strongholds regenerate a free, cache-throttled trickle of
         # irregular units toward their anchored garrison cap. No-op unless
         # coin_insurgency is on. Real units via Base.commission_units -- losses
         # track natively; never a phantom spawn.
-        from game.fourteenth.coin import (
+        from game.retlab.coin import (
             advance_reinfiltration,
             regenerate_insurgent_cells,
         )
@@ -519,18 +519,18 @@ class Game:
         advance_reinfiltration(self, events)
         # COIN roadside IEDs: mine the insurgent ratline -- sweep it or the un-cleared
         # devices detonate on the coalition and drain the mandate. Gated coin_ied OFF.
-        from game.fourteenth.coin_ied import advance_roadside_ieds
+        from game.retlab.coin_ied import advance_roadside_ieds
 
         advance_roadside_ieds(self, events)
         # COIN high-value targets: surface a named insurgent leader for a strike window
         # -- kill him inside it to blow the insurgency's momentum. Gated coin_hvt OFF.
-        from game.fourteenth.coin_hvt import advance_hvt
+        from game.retlab.coin_hvt import advance_hvt
 
         advance_hvt(self, events)
         # COIN dispersed cells: the insurgency in the open countryside -- patrol for them
         # or they coalesce into a stronghold and resupply its caches. Gated coin_dispersed
         # _cells OFF.
-        from game.fourteenth.coin_dispersed import advance_dispersed_cells
+        from game.retlab.coin_dispersed import advance_dispersed_cells
 
         advance_dispersed_cells(self, events)
 
@@ -538,7 +538,7 @@ class Game:
         # squadrons (drawing the helos + suppressors from actual airframes, whose losses are
         # charged back at debrief), or clear it. No-op unless the setting is on and a besieged
         # outpost + launch field + a helo squadron with airframes all exist.
-        from game.fourteenth.super_gaggle import plan_super_gaggle
+        from game.retlab.super_gaggle import plan_super_gaggle
 
         plan_super_gaggle(self)
 
@@ -660,7 +660,7 @@ class Game:
         # blocks + the domination/attrition knobs. Returns None when nothing is
         # configured, so this path costs nothing and the territory checks below
         # remain the universal fallback.
-        from game.fourteenth.victory import victory_verdict
+        from game.retlab.victory import victory_verdict
 
         alternate = victory_verdict(self)
         if alternate == "loss":
@@ -744,14 +744,14 @@ class Game:
         # baseline the ratio conditions measure against. Unconditional and
         # cheap, so a knob flipped on at turn 20 still measures against the
         # earliest state this build saw (turn 0 for a new game).
-        from game.fourteenth.victory import ensure_victory_baseline
+        from game.retlab.victory import ensure_victory_baseline
 
         ensure_victory_baseline(self)
 
         # Pin the COIN conservation anchors at the true campaign start (turn 0,
         # before any mission flies). The finish_turn regen hook runs after the
         # turn counter has advanced, so it can never take this snapshot itself.
-        from game.fourteenth.coin import snapshot_campaign_start_anchors
+        from game.retlab.coin import snapshot_campaign_start_anchors
 
         snapshot_campaign_start_anchors(self)
 
@@ -772,7 +772,7 @@ class Game:
         # front stances (after the coalitions plan, so it has the final say;
         # before GroundPlanner reads cp.stances) + apply any resolve regen.
         # Fully-guarded no-op without an active authored window.
-        from game.fourteenth.red_tempo import apply_red_tempo
+        from game.retlab.red_tempo import apply_red_tempo
 
         apply_red_tempo(self)
 
@@ -931,7 +931,7 @@ class Game:
         # standalone LACM shooter always spawns for the F10 call-for-fire
         # (carrier groups are already covered by perf_do_not_cull_carrier).
         if getattr(self.settings, "cruise_missile_strikes", False):
-            from game.fourteenth.cruise_raids import lacm_ships, plan_cruise_raids
+            from game.retlab.cruise_raids import lacm_ships, plan_cruise_raids
 
             for raid in plan_cruise_raids(self):
                 zones.append(Point(raid.target_x, raid.target_y, self.theater.terrain))

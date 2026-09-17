@@ -11,10 +11,10 @@ Every push to `main` runs these workflows:
    `game/`** (`game/missiongenerator/tests`, `game/missiongenerator/kneeboard_recon/tests`,
    `game/plugins/tests`) — added 2026-07-10; before that those ~245 tests never ran in CI.
    Both test jobs upload coverage to **Codecov**
-   (https://app.codecov.io/gh/BradySox/414Ret) via `codecov/codecov-action@v5` with
+   (https://app.codecov.io/gh/BradySox/RetLab) via `codecov/codecov-action@v5` with
    **OIDC** (`use_oidc` — no `CODECOV_TOKEN` secret; requires the Codecov GitHub App
    installed on the repo, and the *calling* workflow's job to grant
-   `id-token: write` — `build.yml` + `414th-latest.yml` both do). The inherited
+   `id-token: write` — `build.yml` + `retlab-latest.yml` both do). The inherited
    `codecov.yaml` keeps both statuses `informational`, so coverage never blocks a PR
    or the rolling release; an upload failure is also non-fatal by default — check the
    step log, not just the green check (the fork's uploads 404'd silently
@@ -23,15 +23,15 @@ Every push to `main` runs these workflows:
    `@v3` to `@v5` + OIDC). Upstream PRs need none of this — carve PRs get coverage
    comments from upstream's own Codecov registration automatically.
 3. **`lua-lint.yml`** — Lua syntax gate (blocking): `luac5.1 -p` over every
-   `resources/plugins/**/*.lua`. Advisory luacheck (scoped to 414th-authored scripts via
+   `resources/plugins/**/*.lua`. Advisory luacheck (scoped to RetLab-authored scripts via
    `.luacheckrc`) runs continue-on-error and reports counts to Step Summary. Decoupled from
-   `414th-latest.yml` so it can never block the rolling release.
-4. **`414th-latest.yml`** (needs lint + test) — PyInstaller build on `windows-latest`, then
+   `retlab-latest.yml` so it can never block the rolling release.
+4. **`retlab-latest.yml`** (needs lint + test) — PyInstaller build on `windows-latest`, then
    upserts a rolling pre-release tagged `latest`.
 
-The release asset `414th-retribution-latest.zip` (`retribution_main.exe`) is what the
+The release asset `retlab-latest.zip` (`retribution_main.exe`) is what the
 squadron downloads; it always reflects current `main`. The permanent download URL is
-https://github.com/bradyccox/414Ret/releases/tag/latest. A separate `release.yml` (from
+https://github.com/BradySox/RetLab/releases/tag/latest. A separate `release.yml` (from
 upstream) triggers on semver tags (`v1.0.0`) for pinned campaign builds and does NOT affect
 `latest`. Build/SHA are stamped into `resources/buildnumber` + `resources/gitsha` at build
 time (not in the repo).
@@ -55,9 +55,9 @@ Notes learned the hard way:
   how the existing fakes are annotated.
 - The Lua plugins CAN now be exercised headlessly: `tests/lua/` runs the real plugin
   scripts on Lua 5.1 via `lupa` against a faked DCS sandbox (`dcs_stubs.lua`), inside the
-  normal pytest run — see `docs/dev/design/414th-lua-plugin-harness-notes.md` for scope and
+  normal pytest run — see `docs/dev/design/retlab-lua-plugin-harness-notes.md` for scope and
   how to extend it. The `lua-lint.yml` syntax gate still catches parse-time errors; the
   harness catches "script errors at runtime and the feature silently never starts"; actual
   DCS behavior (AI, physics, feel) still needs an in-game pass. See
-  `docs/dev/414th-ingame-pass-checklist.md` for the tracker. When touching a plugin that
+  `docs/dev/retlab-ingame-pass-checklist.md` for the tracker. When touching a plugin that
   has harness coverage (currently `vietnamops`), run/extend its tests.

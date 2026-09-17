@@ -8,7 +8,7 @@ units:
   - SAM SA-12 S-300V 9S32 TR
   - SAM SA-12 S-300V 9A82 LN
   - SAM SA-12 S-300V 9A83 LN
-  # 414th: battery support section (cargo / fuel / power slots)
+  # RetLab: battery support section (cargo / fuel / power slots)
   - Truck GAZ-66
   - Truck KAMAZ 43101
   - Truck Ural-375

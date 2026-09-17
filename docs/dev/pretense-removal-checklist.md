@@ -1,7 +1,7 @@
 # Pretense removal runbook
 
-**Goal:** rip every tie to the upstream **Pretense** campaign generator out of the 414th
-fork. Pretense is an upstream Retribution feature the 414th does not ship.
+**Goal:** rip every tie to the upstream **Pretense** campaign generator out of RetLab
+fork. Pretense is an upstream Retribution feature RetLab does not ship.
 
 **This is a recurring runbook, not a one-shot.** Pretense is actively developed upstream,
 so every future merge from `dcs-retribution/dev` reintroduces the files and re-conflicts
@@ -84,9 +84,9 @@ settings, new generator files, or new menu wiring may have appeared in the sync.
 
 ## 3. Docs
 
-- [ ] **`changelog.md`** — add a `**[414th]**` removal entry. Leave historical Pretense
+- [ ] **`changelog.md`** — add a `**[RetLab]**` removal entry. Leave historical Pretense
       lines intact.
-- [ ] **`docs/dev/414th-features.md`** — drop the two file-path references to
+- [ ] **`docs/dev/retlab-features.md`** — drop the two file-path references to
       `game/pretense/...` (C-130 loadout wiring list; F10-mark-suppression list).
 - [ ] **`docs/dev/settings-qol-audit.md`** — remove the `### Pretense` settings-page
       section. Leave the historical `pretense_num_of_cargo_planes` table row.

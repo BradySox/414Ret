@@ -5,10 +5,10 @@ loop goes debrief -> next briefing without a detour through the map and the
 ATO. The dialog is a thin shell over two pure-Python cores that carry all the
 logic and all the tests:
 
-* ``game.fourteenth.pre_turn_briefing`` -- why this turn matters, from state the
+* ``game.retlab.pre_turn_briefing`` -- why this turn matters, from state the
   campaign already computed (evaders and their capture odds, enemy command
   damage the player caused, victory progress, scheduled arrivals, open loops).
-* ``game.fourteenth.sp_pilot_mode`` -- step 1 the airframe, step 2 the sortie.
+* ``game.retlab.sp_pilot_mode`` -- step 1 the airframe, step 2 the sortie.
 
 Nothing here decides anything: the widgets read the cores and call ``take_seat``.
 Closing the dialog at any point leaves the turn exactly as ``pass_turn`` left it,
@@ -34,8 +34,8 @@ from PySide6.QtWidgets import (
 )
 
 from game import Game
-from game.fourteenth.pre_turn_briefing import URGENT, build_pre_turn_briefing
-from game.fourteenth.sp_pilot_mode import (
+from game.retlab.pre_turn_briefing import URGENT, build_pre_turn_briefing
+from game.retlab.sp_pilot_mode import (
     AirframeOption,
     SortieOption,
     airframe_options,

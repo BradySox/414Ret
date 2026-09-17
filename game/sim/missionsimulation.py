@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Optional, TYPE_CHECKING
 
 from game.debriefing import Debriefing
-from game.fourteenth.mission_archive import archive_mission
+from game.retlab.mission_archive import archive_mission
 from game.missiongenerator import MissionGenerator
 from game.settings.settings import FastForwardStopCondition, CombatResolutionMethod
 from game.unitmap import UnitMap

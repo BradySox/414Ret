@@ -2,7 +2,7 @@
 
 The per-turn base strength top-up used to apply unconditionally, so ground taken
 drained back on a timer regardless of whether anything could reach the base.
-See `docs/dev/design/414th-retribution-long-view.md` seam 4, rung A.
+See `docs/dev/design/retlab-retribution-long-view.md` seam 4, rung A.
 
 Two things here are load-bearing and easy to undo by accident:
 

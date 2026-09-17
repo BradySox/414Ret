@@ -30,7 +30,7 @@
  
  
 +#: Naval station-keeping racetrack (§87). Sizing rationale, with the measured
-+#: threat-ring error table, is in docs/dev/414th-features.md §87.
++#: threat-ring error table, is in docs/dev/retlab-features.md §87.
 +#:
 +#: The anchor is the oval's CENTRE, not a point on it -- that is what makes this
 +#: station-keeping rather than wandering, and it caps displacement at half the

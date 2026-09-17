@@ -49,7 +49,7 @@ class PlanNextAction(CompoundTask[TheaterState]):
 
     # PlanNextAction's offensive methods by class name, in stock priority order.
     # The name-keyed indirection lets §67 weather planning reorder these methods by
-    # name (game/fourteenth/weather_planning.py) without importing the commander.
+    # name (game/retlab/weather_planning.py) without importing the commander.
     _OFFENSIVE_FACTORIES: ClassVar[
         dict[str, Callable[["PlanNextAction"], Task[TheaterState]]]
     ] = {
@@ -91,7 +91,7 @@ class PlanNextAction(CompoundTask[TheaterState]):
         this coalition's ATO this planning run, so the throttle closes the
         offensive middle mid-run once the cap is reached.
         """
-        from game.fourteenth.c2_decapitation import offensive_package_cap
+        from game.retlab.c2_decapitation import offensive_package_cap
 
         coalition = state.context.coalition
         cap = offensive_package_cap(
@@ -113,7 +113,7 @@ class PlanNextAction(CompoundTask[TheaterState]):
         demotes the low-level visual-attack methods to the tail (soft; any other
         sky is a no-op).
         """
-        from game.fourteenth.weather_planning import demote_weather_hostile_methods
+        from game.retlab.weather_planning import demote_weather_hostile_methods
 
         stock = list(self._OFFENSIVE_FACTORIES)
         return demote_weather_hostile_methods(state.context.coalition.game, stock)

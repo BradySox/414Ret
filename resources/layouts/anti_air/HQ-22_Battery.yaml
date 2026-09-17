@@ -20,7 +20,7 @@ groups:
         - CH_SX2190
     - name: S-300 Site TR
       unit_count:
-        - 2 # 414th: guidance-radar redundancy - one HARM must not blind the site
+        - 2 # RetLab: guidance-radar redundancy - one HARM must not blind the site
       unit_types:
         - CH_HQ22_STR
     - name: S-300 Site LN1
@@ -33,13 +33,13 @@ groups:
         - 3
       unit_types:
         - CH_HQ22_LN
-    # 414th: the battery support section -- the S-300 template's groups (§85).
+    # RetLab: the battery support section -- the S-300 template's groups (§85).
     # DM call 2026-08-04: China runs the Soviet fuel kit, so the whitelists
     # mirror the S-300 family's.
     - name: S-300 Site Logistics
       optional: true
       unit_count:
-        # 414th: the textbook configuration is THE configuration (DM call
+        # RetLab: the textbook configuration is THE configuration (DM call
         # 2026-08-04) -- fixed count, no bare-site roll
         - 2
       unit_types:
@@ -50,7 +50,7 @@ groups:
       optional: true
       fill: false
       unit_count:
-        # 414th: the textbook configuration is THE configuration (DM call
+        # RetLab: the textbook configuration is THE configuration (DM call
         # 2026-08-04) -- fixed count, no bare-site roll
         - 2
       unit_types:
@@ -63,7 +63,7 @@ groups:
       optional: true
       fill: false
       unit_count:
-        # 414th: the textbook configuration is THE configuration (DM call
+        # RetLab: the textbook configuration is THE configuration (DM call
         # 2026-08-04) -- fixed count, no bare-site roll
         - 2
       unit_types:

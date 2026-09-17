@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------------------------------
 -- Cross-turn naval magazines runtime (§81). Design and the flown-test record are
--- in docs/dev/design/414th-naval-magazines-notes.md.
+-- in docs/dev/design/retlab-naval-magazines-notes.md.
 --
 -- Reads dcsRetribution.navalMagazines (game/missiongenerator/navalmagazineluadata.py):
 --   stagger   = true|false   -- N1: ships generated ReturnFire, release them on a stagger

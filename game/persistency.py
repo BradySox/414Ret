@@ -48,6 +48,12 @@ class DummyObject:
 # Deliberately an allowlist, not a blanket ModuleNotFoundError catch: a genuinely
 # missing module (bad install, a typo in a refactor) must still fail loudly
 # rather than silently degrade a save.
+#
+# The ``game.fourteenth.*`` paths below are deliberately NOT renamed to
+# ``game.retlab.*``: all nine were deleted while the package still carried the
+# old name, so a pickle can only ever name the old path. They are matched before
+# the prefix remap in _handle_retlab_rename, which would otherwise send them to a
+# module that never existed under either name.
 REMOVED_MODULES = (
     "game.fourteenth.phases",
     "game.fourteenth.red_intent",
@@ -79,6 +85,7 @@ class MigrationUnpickler(pickle.Unpickler):
             self._handle_flight_type,
             self._handle_flight_waypoint_type,
             self._handle_misc,
+            self._handle_retlab_rename,
         ]
 
         for handler in handlers:
@@ -310,7 +317,7 @@ class MigrationUnpickler(pickle.Unpickler):
         return None
     
     def _handle_flight_type(self, module: str, name: str) -> Any:
-        """Migrate legacy FlightType values from older 414th builds.
+        """Migrate legacy FlightType values from older RetLab builds.
 
         Value renames (ISR -> JAMMING, the retired SCRAMBLE -> BARCAP, etc.) live
         in FlightType._missing_ (game/ato/flighttype.py) as the single source of
@@ -398,7 +405,7 @@ class MigrationUnpickler(pickle.Unpickler):
             return dcs.terrain.Airport  # use base-class if airport was removed
 
         # Tombstones for modules deleted since a save could have pickled them; the
-        # removals themselves are documented in docs/dev/414th-features.md.
+        # removals themselves are documented in docs/dev/retlab-features.md.
         #
         # A placeholder here only stops the LOAD failing. A class whose instances are
         # actually reachable ALSO needs a __setstate__ that drops or rebuilds the
@@ -413,6 +420,21 @@ class MigrationUnpickler(pickle.Unpickler):
 
         return None
     
+    def _handle_retlab_rename(self, module: str, name: str) -> Any:
+        """Resolve a pre-rebrand save: ``game.fourteenth.*`` is now ``game.retlab.*``.
+
+        The package was renamed with the fork, so every save written before that
+        names the old path for live classes too (RegionPriority reaches a pickle
+        through ControlPoint, VictoryBaseline and SuperGaggleCommitment through
+        Game). Runs AFTER _handle_misc so the REMOVED_MODULES tombstones -- which
+        keep the old name on purpose -- are matched first.
+        """
+        if module == "game.fourteenth" or module.startswith("game.fourteenth."):
+            return super().find_class(
+                "game.retlab" + module[len("game.fourteenth") :], name
+            )
+        return None
+
     def _handle_default(self, module: str, name: str) -> Any:
         """Handle default class resolution with fallback logic"""
         # Special handling for vehicles and ships with case conversion
@@ -537,12 +559,12 @@ def kneeboards_dir() -> Path:
 
 
 def flight_defaults_path() -> Path:
-    """JSON store for the 414th per-aircraft "save flight defaults" QOL feature.
+    """JSON store for the RetLab per-aircraft "save flight defaults" QOL feature.
 
     Holds each airframe's preferred internal fuel + cockpit properties so a new
     flight starts pre-configured. Global (survives across campaigns), never part of
     a save game -- the same shape as the DCS ``UnitPayloads`` files the loadout
-    "Save Payload" button writes. See ``game/fourteenth/flight_defaults.py``.
+    "Save Payload" button writes. See ``game/retlab/flight_defaults.py``.
     """
     return _create_dir_if_needed(base_path() / "Retribution") / "flight_defaults.json"
 
@@ -553,18 +575,18 @@ def pilot_profiles_path() -> Path:
     A pilot's career across EVERY campaign, keyed by DCS player name, so it
     survives starting a new campaign, deleting a save, or updating the build.
     Global and never part of a save game -- the same shape as
-    ``flight_defaults_path`` above. See ``game/fourteenth/pilot_profile.py``.
+    ``flight_defaults_path`` above. See ``game/retlab/pilot_profile.py``.
     """
     return _create_dir_if_needed(base_path() / "Retribution") / "pilot_profiles.json"
 
 
 def payloads_dir(backup: bool = False) -> Path:
-    """The DCS user payload directory, or the 414th's backup store beside it.
+    """The DCS user payload directory, or RetLab's backup store beside it.
 
     The backups deliberately do NOT live inside ``UnitPayloads``: DCS enumerates
     that folder expecting only payload ``.lua`` files and logs
     ``Can't open file '...' from real path fs`` for any subdirectory it finds,
-    twice on every launch. See ``docs/dev/414th-features.md`` §73.
+    twice on every launch. See ``docs/dev/retlab-features.md`` §73.
     """
     payloads = base_path() / "MissionEditor" / "UnitPayloads"
     backups = _create_dir_if_needed(base_path() / "Retribution" / "PayloadBackups")
@@ -628,7 +650,7 @@ def mission_archive_dir() -> Path:
 
     A subfolder of ``Missions`` (rather than the Retribution tree) so DCS's own
     mission browser lists it and an archived turn can be opened straight from the
-    game. See ``game/fourteenth/mission_archive.py``.
+    game. See ``game/retlab/mission_archive.py``.
     """
     return _create_dir_if_needed(base_path() / "Missions" / "Retribution Archive")
 

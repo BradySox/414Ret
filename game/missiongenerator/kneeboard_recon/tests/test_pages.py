@@ -504,10 +504,10 @@ def test_dispatcher_flight_type_contract_matches_spec() -> None:
     member of a strike package without the target card.
 
     The docstring used to cite a "Spec design doc table (Per-flight-type
-    behaviour)" in ``414th-tars-recon-notes.md``. That note was deleted
+    behaviour)" in ``retlab-tars-recon-notes.md``. That note was deleted
     2026-08-20 (#922) and the citation was dead, so the rule is stated here
     instead; the live owner of the question is
-    ``docs/dev/design/414th-recon-role-scoping-notes.md``.
+    ``docs/dev/design/retlab-recon-role-scoping-notes.md``.
     """
     from game.missiongenerator.kneeboard_recon.pages import _FLIGHT_TYPES_WITH_RECON
 

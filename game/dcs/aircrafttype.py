@@ -250,7 +250,7 @@ class AircraftType(UnitType[Type[FlyingType]]):
     #: Minutes a player needs on the ramp before taxi, if this airframe differs from
     #: the campaign-wide ``player_startup_time``. Taxi is NOT included -- that is
     #: ``estimate_ground_ops``, which varies by field, not by airframe.
-    #: See docs/dev/design/414th-startup-times-notes.md for where a value comes from.
+    #: See docs/dev/design/retlab-startup-times-notes.md for where a value comes from.
     startup_minutes: Optional[int]
 
     cruise_altitude: Optional[Distance]
@@ -258,7 +258,7 @@ class AircraftType(UnitType[Type[FlyingType]]):
 
     #: Cruise mach for this airframe, when it differs from the planner's flat
     #: default. Authored from measurement, never derived: store weight does not
-    #: predict it. See docs/dev/design/414th-cruise-mach-notes.md.
+    #: predict it. See docs/dev/design/retlab-cruise-mach-notes.md.
     cruise_mach: Optional[float]
 
     #: The maximum range between the origin airfield and the target for which the auto-
@@ -291,7 +291,7 @@ class AircraftType(UnitType[Type[FlyingType]]):
     has_built_in_ecm: bool
 
     # Legacy EW capability metadata retained for third-party YAML compatibility.
-    # The 414th EW model is now the C-130J JAMMING flight + c130j plugin.
+    # RetLab EW model is now the C-130J JAMMING flight + c130j plugin.
     has_built_in_jamming: bool
 
     task_priorities: dict[FlightType, int]
@@ -329,7 +329,7 @@ class AircraftType(UnitType[Type[FlyingType]]):
     #: exactly the pre-2026-08-16 behaviour. pydcs's own ``eplrs`` flag says only
     #: that DCS lets you tick the box, and it is true for the B-47 and the OV-10A,
     #: so it cannot answer the era question on its own. See
-    #: docs/dev/design/414th-datalink-era-notes.md.
+    #: docs/dev/design/retlab-datalink-era-notes.md.
     datalink_introduced: Optional[int] = None
 
     #: Lift slots this airframe can carry on a ground-unit transfer, from the

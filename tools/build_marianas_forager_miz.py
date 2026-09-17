@@ -52,7 +52,7 @@ RED_AIRFIELDS = (
 
 # Pagan is deliberately absent from both lists. The landmap carries no Pagan
 # island, so its airstrip sits 313 km inside the sea zone -- see
-# docs/dev/design/414th-marianas-wwii-terrain-notes.md. It is left NEUTRAL.
+# docs/dev/design/retlab-marianas-wwii-terrain-notes.md. It is left NEUTRAL.
 
 # Task Force 58 stood west of Saipan covering the landings. Far enough offshore to
 # be a transit, close enough for the Corsairs to reach the island.

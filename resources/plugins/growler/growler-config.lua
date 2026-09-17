@@ -1,5 +1,5 @@
 -- Escort jamming runtime (§77, EA-18G / EA-6B). Design and the effect model are
--- in docs/dev/414th-features.md §77.
+-- in docs/dev/retlab-features.md §77.
 --
 -- The load-bearing parts:
 --

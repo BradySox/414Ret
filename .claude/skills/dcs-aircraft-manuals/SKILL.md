@@ -25,7 +25,7 @@ usually misses the section anyway.
 ```
 
 **Extract with `pdftotext`, not the Read tool.** The Read tool renders PDF pages as images
-via `pdftoppm`, which is not installed on the 414th's machine — it fails with
+via `pdftoppm`, which is not installed on RetLab's machine — it fails with
 "pdftoppm is not installed". `pdftotext` is present and text is cheaper anyway:
 
 ```bash

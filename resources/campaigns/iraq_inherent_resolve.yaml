@@ -1,7 +1,7 @@
 ---
 name: Iraq - Operation Inherent Resolve (COIN)
 theater: Iraq
-authors: 414th JFG
+authors: RetLab
 description: >-
   <p><strong>Nineveh, October 2016 &ndash; July 2017 &mdash; the fight to retake Mosul.</strong>
   The caliphate holds the city and a ring of towns across the Nineveh plain, and it does not
@@ -27,7 +27,7 @@ description: >-
   an SA-6 over Mosul, SA-8/9/13 across the ring. Enough to make SEAD a real job; never enough to
   stop the war. Low is where the flak lives.</p>
   <p>The COIN layer &mdash; cache-throttled cell regeneration, the inverted will economy, and the
-  three-phase Mosul arc &mdash; is the 414th's; sibling to Operation Enduring Resolve.</p>
+  three-phase Mosul arc &mdash; is RetLab's; sibling to Operation Enduring Resolve.</p>
 recommended_player_faction: CJTF-OIR 2016
 recommended_enemy_faction: Islamic State 2016
 miz: iraq_inherent_resolve.miz
@@ -46,7 +46,7 @@ settings:
   plugins:
     vietnamops: true
   squadron_start_full: true
-  # The COIN stack (feature docs: 414th-coin-insurgent-replenishment-notes.md):
+  # The COIN stack (feature docs: retlab-coin-insurgent-replenishment-notes.md):
   # cache-throttled cell regeneration + the ratline + FOB standoff fire + the
   # will economy that decides the war.
   coin_insurgency: true

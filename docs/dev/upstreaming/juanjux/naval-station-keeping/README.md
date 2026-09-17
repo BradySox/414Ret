@@ -1,6 +1,6 @@
 # Naval station-keeping racetracks
 
-414Ret §87. One file, one new method group, one call site.
+RetLab §87. One file, one new method group, one call site.
 
 ## The defect
 

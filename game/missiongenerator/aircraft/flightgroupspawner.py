@@ -122,7 +122,7 @@ class FlightGroupSpawner:
     def _register_custom_callsign(self) -> None:
         """Register a non-stock callsign into the spawn country's pool before pydcs
         assigns it -- pydcs ValueErrors on a callsign not in that pool (dcs
-        ``mission._assign_callsign``). Covers both the 414th role callsigns
+        ``mission._assign_callsign``). Covers both RetLab role callsigns
         (``Toxic``) and a squadron's custom event callsign (e.g. "Voodoo"); a
         stock pool callsign is already present, so this no-ops for it.
         Records that WE injected the name so :meth:`_deregister_custom_callsign`

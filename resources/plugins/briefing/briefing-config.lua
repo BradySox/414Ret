@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------------------------------
--- Mission-start briefing popup (§58). Design is in docs/dev/414th-features.md §58.
+-- Mission-start briefing popup (§58). Design is in docs/dev/retlab-features.md §58.
 --
 -- Per-pilot slot-in card plus a taxi-instruction card. Reads dcsRetribution.briefing
 -- (game/missiongenerator/briefingluadata.py); inert when absent. Display only --

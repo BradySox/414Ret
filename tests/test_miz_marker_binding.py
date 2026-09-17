@@ -6,7 +6,7 @@ proximity decides the owner. But a marker authored in the BLUE block was
 silently dropped for most classes (ships / SAMs / EWRs / missile / coastal /
 offshore strike) -- 22 authored markers across 7 shipped campaigns never
 generated -- and the classes that did walk both blocks bound coalition-blind,
-so one side's marker could be handed to the other (Red Tide's "414th Red EWR 1"
+so one side's marker could be handed to the other (Red Tide's "RetLab Red EWR 1"
 bound blue Frankfurt and silently never spawned).
 
 Contract locked here: every marker class also walks the blue block, and a
@@ -250,7 +250,7 @@ def _build_dynamic_spawn_miz(path: Path) -> None:
     red_field = mission.terrain.airports["Senaki-Kolkhi"]
     blue_field.set_blue()
     red_field.set_red()
-    # A dynamic-spawn RED field: upstream would infer NEUTRAL; the 414th keeps
+    # A dynamic-spawn RED field: upstream would infer NEUTRAL; RetLab keeps
     # the .miz-declared coalition.
     red_field.dynamic_spawn = True
 

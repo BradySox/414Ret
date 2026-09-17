@@ -116,7 +116,7 @@ class PackageBuilder:
             flight.start_type = settings.start_type_for(
                 plan.task, has_players=has_players
             )
-            # The 414th air-start overrides sit UNDER that call, not beside it.
+            # RetLab air-start overrides sit UNDER that call, not beside it.
             # Before upstream #929 they were `elif` arms behind the client-flight
             # branch, so they only ever applied to AI flights and a player-crewed
             # flight always kept its configured start type. Keeping them as sibling

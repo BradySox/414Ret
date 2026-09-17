@@ -4,7 +4,7 @@ A **package** is a group of one or more flights all working toward the same goal
 a shared time-over-target. This page covers how packages are built, how the planner schedules
 them, and what every task type actually does — both when you fly it and when the AI does.
 
-For how 414Ret plans the wider air war around your packages — QRA, BARCAP layering, support
+For how RetLab plans the wider air war around your packages — QRA, BARCAP layering, support
 orbits, SEAD/DEAD reachability, and the IADS engine — see
 [Air-Defense-and-the-Air-War](Air-Defense-and-the-Air-War).
 
@@ -123,7 +123,7 @@ Every task below uses the same fields:
 - **Player technique** — how a human flies it well.
 - **AI limitations** — what to expect when the AI flies it.
 - **IADS notes** — behaviour changes under the runtime IADS engine, where relevant
-  (air-defence tasks). 414Ret runs **Skynet** for every campaign, as upstream does. It shuts
+  (air-defence tasks). RetLab runs **Skynet** for every campaign, as upstream does. It shuts
   radars down reactively, so a HARM is less likely to score an emitter kill —
   see [Air-Defense-and-the-Air-War](Air-Defense-and-the-Air-War).
 
@@ -139,7 +139,7 @@ Every task below uses the same fields:
 - **Player technique:** Hold the racetrack between the two patrol points; commit on threats
   inside the engagement zone and recover the CAP.
 - **AI limitations:** Waypoints can look offset from the objective, but coverage is by
-  engagement zone — verify with "Display Selected BARCAP Commit Range". 414Ret schedules
+  engagement zone — verify with "Display Selected BARCAP Commit Range". RetLab schedules
   BARCAP as overlapping, jittered waves; see
   [Air-Defense-and-the-Air-War](Air-Defense-and-the-Air-War).
 
@@ -194,7 +194,7 @@ of misfragged packages. Decision guide first.
 Rule of thumb: **DEAD = kill the named site. SEAD = silence the named site. SEAD Escort =
 guard a flight. SEAD Sweep = guard the corridor.**
 
-In 414Ret, mobile short-range defences (SHORAD/AAA/MANPAD) are hidden from player datalinks,
+In RetLab, mobile short-range defences (SHORAD/AAA/MANPAD) are hidden from player datalinks,
 while larger radar SAM sites (MERAD/LORAD) remain visible and targetable — so your SEAD/DEAD
 planning is aimed at the sites that actually warrant a deliberate package. See
 [Air-Defense-and-the-Air-War](Air-Defense-and-the-Air-War).
@@ -213,7 +213,7 @@ planning is aimed at the sites that actually warrant a deliberate package. See
   even if the emitter is off. Stagger launches ~1 min apart; keep one HARM in flight near the
   site to hold suppression. With decoys the principle is identical — estimate the decoy's TOT.
 - **AI limitations:** AI may kill the emitter incidentally but won't reliably finish the site —
-  that's DEAD's job. In 414Ret the AI SEAD can loiter near the target, react to emitters, and
+  that's DEAD's job. In RetLab the AI SEAD can loiter near the target, react to emitters, and
   break off on a computed timeline rather than making one inflexible pass.
 - **IADS notes:** Sites shut radars down reactively, so HARMs are **less** likely to score
   emitter kills than against a dumb SAM. Plan SEAD as genuine suppression; let DEAD close the
@@ -229,7 +229,7 @@ planning is aimed at the sites that actually warrant a deliberate package. See
 - **Player technique:** Ingress while the radar is held down by SEAD; target launchers/TELs and
   command vehicles that ARMs won't kill.
 - **AI limitations:** Carries bombs/missiles rather than ARMs/decoys so it can destroy the
-  non-emitting parts. Without SEAD support against a live radar SAM, expect losses. 414Ret's
+  non-emitting parts. Without SEAD support against a live radar SAM, expect losses. RetLab's
   planner will **not** send the follow-on strike through a belt the DEAD can't actually reach —
   the strike is held until the SAM is genuinely down (DEAD reachability gate; see
   [Air-Defense-and-the-Air-War](Air-Defense-and-the-Air-War)).
@@ -322,7 +322,7 @@ planning is aimed at the sites that actually warrant a deliberate package. See
 - **Typical airframes:** A-10-class types excel; any CAS-capable airframe works.
 - **TOT meaning:** Loiter/search start. Searches until bingo or winchester.
 - **Player technique:** Work the front-line area; coordinate with ground stance for effect. In
-  414Ret the front is a prolonged, formation-aware firefight (Troops In Contact), so there are
+  RetLab the front is a prolonged, formation-aware firefight (Troops In Contact), so there are
   usually live engagements to support.
 - **AI limitations:** **AI will not actively hunt** — it engages only what enters visual range,
   and is degraded in poor weather, so it may miss targets on the line.
@@ -378,7 +378,7 @@ planning is aimed at the sites that actually warrant a deliberate package. See
 - **Valid targets:** Area/directional/spot jamming against enemy emitters; ELINT tracking of
   radars within detection range.
 - **Package role:** Lead / standalone.
-- **Typical airframes:** C-130J (the only 414th scripted EW model — the old generic fighter-pod
+- **Typical airframes:** C-130J (the only RetLab scripted EW model — the old generic fighter-pod
   jammer is retired).
 - **TOT meaning:** Start of the standoff orbit (an AWACS-style racetrack placed outside the
   threat zone).
@@ -431,7 +431,7 @@ planning is aimed at the sites that actually warrant a deliberate package. See
 
 ## See also
 
-- [Air-Defense-and-the-Air-War](Air-Defense-and-the-Air-War) — how 414Ret plans the air war
+- [Air-Defense-and-the-Air-War](Air-Defense-and-the-Air-War) — how RetLab plans the air war
   around your packages (QRA, BARCAP layering, support orbits, SEAD/DEAD reachability, IADS).
 - [Fog-of-War-and-Reconnaissance](Fog-of-War-and-Reconnaissance) — recon fog, TARPS, and the
   overview reveal toggle.

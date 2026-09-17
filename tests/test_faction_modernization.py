@@ -1,6 +1,6 @@
 """Regression guard for the cut-mod faction/campaign modernization.
 
-The 414th ships a trimmed mod set; #267 swapped cut-mod aircraft out of the
+RetLab ships a trimmed mod set; #267 swapped cut-mod aircraft out of the
 campaigns and the 2026-06-28 pass did the same for the faction JSONs. The faction
 loader **silently drops** an unresolved/cut aircraft (see
 ``test_unknown_aircraft_name_skipped_not_whole_faction``), so re-introducing one

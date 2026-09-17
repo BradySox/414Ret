@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Any, cast
 
-from game.fourteenth.supply_report import supply_sitrep_lines
+from game.retlab.supply_report import supply_sitrep_lines
 from game.theater.supply import SupplyStatus
 from game.theater.transitnetwork import TransitNetwork
 

@@ -1,7 +1,7 @@
 """Convoy ambush spring -> native DCS triggers (§50).
 
 The runtime half of the convoy ambush feature. The turn-boundary force model
-(``game/fourteenth/convoy_ambush.py``) has already rolled each active blue supply convoy
+(``game/retlab/convoy_ambush.py``) has already rolled each active blue supply convoy
 for an ambush and, where the roll hit, seeded real, ``map_hidden`` red ambush teams along
 its road, recording each pairing on ``game.convoy_ambush_state``. This generator arms
 those pairings **at generation time**, using DCS's own trigger engine:

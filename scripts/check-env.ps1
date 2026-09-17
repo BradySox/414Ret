@@ -24,7 +24,7 @@ $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 $venvPython = Join-Path $repoRoot ".venv\Scripts\python.exe"
 $repoPython = Join-Path $repoRoot ".python311\python.exe"
 
-Write-Host "414Ret environment check"
+Write-Host "RetLab environment check"
 Write-Host "Repo: $repoRoot"
 Write-Host ""
 

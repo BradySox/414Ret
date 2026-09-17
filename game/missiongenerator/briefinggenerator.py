@@ -12,7 +12,7 @@ from dcs.mission import Mission
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from game.ato.flightwaypoint import FlightWaypoint
-from game.fourteenth.cruise_raids import (
+from game.retlab.cruise_raids import (
     CruiseRaid,
     LacmShip,
     player_briefing_info,

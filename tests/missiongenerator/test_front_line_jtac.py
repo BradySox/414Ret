@@ -1,7 +1,7 @@
 """The front-line JTAC is the ONLY JTAC model, gated on nothing but `has_jtac`.
 
 Background (2026-08-05). The fork briefly ran two mutually-exclusive JTAC models:
-upstream's invisible/immortal FAC orbiting the FLOT, and a 414th packaged drone
+upstream's invisible/immortal FAC orbiting the FLOT, and a RetLab packaged drone
 that rode air-to-ground packages and lased from there
 (`AircraftGenerator._maybe_configure_jtac`, gated by `coin_packaged_jtac_drone`).
 The drone model was stripped on a DM call, leaving the front-line FAC as the only

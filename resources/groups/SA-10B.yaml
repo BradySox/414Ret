@@ -8,7 +8,7 @@ units:
   - SAM SA-10B S-300PS 30N6 TR
   - SAM SA-10B S-300PS 5P85SE LN
   - SAM SA-10B S-300PS 5P85SU LN
-  # 414th: battery support section (cargo / fuel / power slots)
+  # RetLab: battery support section (cargo / fuel / power slots)
   - Truck GAZ-66
   - Truck KAMAZ 43101
   - Truck Ural-375

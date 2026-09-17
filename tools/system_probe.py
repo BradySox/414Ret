@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Multi-turn self-play probe for the 414th's campaign systems.
+"""Multi-turn self-play probe for RetLab's campaign systems.
 
 The 2026-07-18 early-systems audit's empirical pass: generate a real campaign
 through the engine pipeline (the ``campaign_phase_laydown.py --engine`` recipe),
@@ -189,7 +189,7 @@ def _red_cell_census(game: Any) -> int:
 
 
 def _sample(game: Any) -> dict[str, Any]:
-    from game.fourteenth.coin_hvt import active_hvt_status
+    from game.retlab.coin_hvt import active_hvt_status
 
     convoys_blue = _safe(lambda: len(list(game.blue.transfers.convoys)), None)
     convoys_red = _safe(lambda: len(list(game.red.transfers.convoys)), None)
@@ -242,7 +242,7 @@ def _engage(game: Any, log: list[str]) -> None:
     state = getattr(game, "coin_state", None)
     if not isinstance(state, dict):
         return
-    from game.fourteenth.coin import _tgo_by_id
+    from game.retlab.coin import _tgo_by_id
 
     # Sweep every live IED/VBIED (the player flying the TARPS+CAS loop).
     for ied in list(state.get("ieds", []) or []):

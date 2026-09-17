@@ -1,9 +1,9 @@
 """Restore upstream aircraft task weights (2026-08-09 planner re-convergence, order E).
 
 See the DECIDED block in
-docs/dev/design/414th-autoplanner-upstream-divergence-audit.md: default planner
+docs/dev/design/retlab-autoplanner-upstream-divergence-audit.md: default planner
 behavior returns to upstream, including the task-weight rebalance
-(docs/dev/design/414th-aircraft-task-rebalance-rubric.md). This script reverts the
+(docs/dev/design/retlab-aircraft-task-rebalance-rubric.md). This script reverts the
 *magnitudes* while keeping every decided shape:
 
   - For each resources/units/aircraft/*.yaml that changed since the upstream merge

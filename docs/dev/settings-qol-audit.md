@@ -124,7 +124,7 @@ These are live settings, not deletion candidates:
 ## Plugin wording cleanup
 
 The obsolete Anubis C-130 Hercules mod and its `herculescargo` cargo plugin were removed
-in favor of the official DCS `C-130J-30`, so the only remaining C-130J entry is the 414th
+in favor of the official DCS `C-130J-30`, so the only remaining C-130J entry is RetLab
 EW/ISR mission system (`c130j` plugin). Splash Damage now explicitly says its squadron
 tuning is locked. The hidden QRA runtime plugin now explains that its user-facing controls
 live under Campaign Doctrine.

@@ -483,7 +483,7 @@ def test_live_weather_reaches_every_turn_not_only_the_first(
 def test_the_weather_aware_planner_sees_a_live_storm() -> None:
     """§67 tested isinstance(Raining, Thunderstorm); a LiveWeather is neither, so a
     real thunderstorm read as clear -- auto-recon flew and low-level attack stayed."""
-    from game.fourteenth import weather_planning
+    from game.retlab import weather_planning
 
     game = SimpleNamespace(
         settings=SimpleNamespace(weather_aware_planning=True),
@@ -495,7 +495,7 @@ def test_the_weather_aware_planner_sees_a_live_storm() -> None:
 
 
 def test_a_clear_observation_leaves_the_planner_alone() -> None:
-    from game.fourteenth import weather_planning
+    from game.retlab import weather_planning
 
     game = SimpleNamespace(
         settings=SimpleNamespace(weather_aware_planning=True),

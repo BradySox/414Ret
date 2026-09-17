@@ -15,7 +15,7 @@ failed to close on the WATCH list *as well* — because it was never a watch ite
 pilot to eject on purpose, which is precisely the contrived condition the WATCH rules exclude.
 It had been parked on the one surface that structurally could not close it. The
 three-cadence model in
-[`414th-verification-cadence-notes.md`](../design/414th-verification-cadence-notes.md)
+[`retlab-verification-cadence-notes.md`](../design/retlab-verification-cadence-notes.md)
 predicted exactly this gap and named this card as the fix; it just had not been built.
 
 Conventions follow WATCH.md, and the session-start hook parses both files identically:
@@ -57,7 +57,7 @@ analysis department on either side of track. **~20 min.**
   the furthest circled unit, left and right. Two or three passes at different altitudes
   is much better than one — the swath almost certainly scales with height.
 - **Pass criterion:** none. This card produces a *number*, not a verdict. Write it into
-  [`414th-recon-role-scoping-notes.md`](../design/414th-recon-role-scoping-notes.md)
+  [`retlab-recon-role-scoping-notes.md`](../design/retlab-recon-role-scoping-notes.md)
   and the radius can then be set from evidence.
 - **Watch for:** the KS-87 frame camera and the KA-99 panoramic have different coverage
   — note which was recording. The pilot can now run either (`hold Store Release`), so
@@ -70,7 +70,7 @@ per base and type as DCS's **Dyn.SPAWN Template** and links the base to it. What
 install's Lua could answer is answered; two things are decided in native code and only a
 fly settles them: whether the route and radio presets carry, and whether the warehouse
 entry needs `wsType`. Design note:
-[`414th-dynamic-spawn-templates-notes.md`](../design/414th-dynamic-spawn-templates-notes.md).
+[`retlab-dynamic-spawn-templates-notes.md`](../design/retlab-dynamic-spawn-templates-notes.md).
 
 **Try:** any campaign with **Enable dynamic player slots** on and a player Hornet package
 fragged from a field. Generate the turn, open the mission, and take a **dynamic** Hornet at

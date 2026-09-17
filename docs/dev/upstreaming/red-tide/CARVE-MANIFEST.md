@@ -1,8 +1,8 @@
 # Red Tide — upstream publication carve
 
-Publishes **Germany - Red Tide** (the 414th's *Red Storm Rising* 1988 NATO-counteroffensive
+Publishes **Germany - Red Tide** (RetLab's *Red Storm Rising* 1988 NATO-counteroffensive
 campaign on the GermanyCW map) as a public Retribution campaign, via
-`bradyccox/dcs-retribution` → `dcs-retribution/dcs-retribution` (`dev`).
+`BradySox/dcs-retribution` → `dcs-retribution/dcs-retribution` (`dev`).
 
 **Everything upstream needs is in `payload/`** — copy it over a checkout of the PR fork,
 validate (step 3), open the PR with `PR.md` as the body. The payload is **generated** by
@@ -13,7 +13,7 @@ rather than hand-editing payload files.
 
 | File | What / why |
 |---|---|
-| `resources/campaigns/red_tide.yaml` | The campaign. Differences from the fork's copy: **(1)** the fork-only YAML `supply_routes:`/`shipping_lanes:` blocks are removed (upstream reads routes from miz groups — see the miz row); **(2)** the four 414th-identity squadron names are swapped for squadron defs that already exist upstream (`414th Voodoo Squadron`→`23rd FS`, `414th JFG Hornets`→`VMFA-251`, `414th Tactical Fighter Squadron`→`336th Fighter Squadron`, `414th Aviation Detachment`→`HMLA-269 (UH-1H)`), and the one description line naming the 414th is neutralized; **(3)** `aircraft_type: C-130J-30` (a fork/mod consolidation) → vanilla `C-130`; **(4)** `recommended_enemy_faction: Russia 1980` → `Russia 1988` (below). |
+| `resources/campaigns/red_tide.yaml` | The campaign. Differences from the fork's copy: **(1)** the fork-only YAML `supply_routes:`/`shipping_lanes:` blocks are removed (upstream reads routes from miz groups — see the miz row); **(2)** the four retlab-identity squadron names are swapped for squadron defs that already exist upstream (`RetLab Voodoo Squadron`→`23rd FS`, `RetLab Hornets`→`VMFA-251`, `414th Tactical Fighter Squadron`→`336th Fighter Squadron`, `RetLab Aviation Detachment`→`HMLA-269 (UH-1H)`), and the one description line naming RetLab is neutralized; **(3)** `aircraft_type: C-130J-30` (a fork/mod consolidation) → vanilla `C-130`; **(4)** `recommended_enemy_faction: Russia 1980` → `Russia 1988` (below). |
 | `resources/campaigns/red_tide.miz` | The fork miz **plus the 12 land supply routes baked back as blue M-113 front-line path groups and the Baltic shipping lane as a blue HandyWind group** — upstream's native route mechanism (the fork had migrated these to YAML). Pure text surgery on the mission Lua: group/unit ids allocated past the existing max, brace balance asserted, `warehouses`/`options`/`theatre` byte-identical to the fork's shipped miz. The miz is marker-only vanilla units (Skynet-compatible statics for `advanced_iads` included). |
 | `resources/factions/russia_1988.json` | **New faction**: upstream `russia_1980` verbatim + the stock `SA-11` and `SA-10/S-300PS` preset groups (in service 1980/1982 — era-honest for the campaign's 1988 date). Gives the campaign its premised deep LORAD belt without touching a stock faction, and fills the russia_1980→russia_1990 gap generally. |
 | `resources/factions/blufor_late_coldwar.json` | Upstream copy + **one added line**: `KC-135 Stratotanker MPRS` in `tankers` (the campaign frags a drogue tanker for its F-14B/F/A-18C/A-6E). Diff against current dev before committing — if upstream has since added MPRS, drop this file. |
@@ -21,9 +21,9 @@ rather than hand-editing payload files.
 
 ## What was deliberately left fork-side
 
-- The 414th identity (squadron names, the description credit) — replaced as above; the fork
+- RetLab identity (squadron names, the description credit) — replaced as above; the fork
   keeps its own branded copy unchanged.
-- The fork's YAML supply-route mechanism, MANTIS, and every other 414th engine feature — the
+- The fork's YAML supply-route mechanism, MANTIS, and every other RetLab engine feature — the
   payload targets stock upstream `dev` and depends on none of them.
 - The Red Tide wiki briefing pack (fork docs).
 
@@ -66,4 +66,4 @@ rather than hand-editing payload files.
   consistency with upstream's own campaigns that carry it — do not rely on it.
 - Factories quirk does not apply here (no factory markers were added); the miz's objective
   markers are unchanged from the fork build documented in
-  `docs/dev/design/414th-red-tide-campaign-notes.md`.
+  `docs/dev/design/retlab-red-tide-campaign-notes.md`.

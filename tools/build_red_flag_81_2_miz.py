@@ -1,7 +1,7 @@
 """Build resources/campaigns/red_flag_81_2.miz from exercise_vegas_nerve.miz.
 
 Reshapes the Vegas Nerve NTTR miz into the Red Flag 81-2 laydown per
-docs/dev/design/414th-red-flag-81-campaign-notes.md section 3:
+docs/dev/design/retlab-red-flag-81-campaign-notes.md section 3:
 
 - Airport ownership flipped to the classic Red Flag geometry: Blue at Nellis +
   Creech (Indian Springs), Red holding the north-west ranges (Tonopah Test

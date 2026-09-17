@@ -22,7 +22,7 @@ from game import Game
 from game.ato.flight import Flight
 from game.ato.flightmember import FlightMember
 from game.ato.loadouts import Loadout
-from game.fourteenth.fuel_brief import fuel_brief_for, fuel_brief_text
+from game.retlab.fuel_brief import fuel_brief_for, fuel_brief_text
 from game.utils import KG_TO_LBS
 from qt_ui.blocksignals import block_signals
 from qt_ui.widgets.QLabeledWidget import QLabeledWidget
@@ -293,7 +293,7 @@ class QFlightPayloadTab(QFrame):
         self.fuel_selector = DcsFuelSelector(flight)
         aircraft_layout.addLayout(self.fuel_selector)
 
-        # 414th (§46): the live fuel-plan readout -- the planner's own sortie
+        # RetLab (§46): the live fuel-plan readout -- the planner's own sortie
         # numbers (burn vs carried, tanker passes, RTB margin) recomputed as the
         # fuel slider, loadout, or pylons change, so the payload screen shows why
         # the jet carries its bags and whether the sortie gets home.
@@ -301,7 +301,7 @@ class QFlightPayloadTab(QFrame):
         _wrap_without_widening(self.fuel_brief_label)
         aircraft_layout.addWidget(self.fuel_brief_label)
 
-        # 414th (§43): remember the fuel + aircraft properties above as this
+        # RetLab (§43): remember the fuel + aircraft properties above as this
         # airframe's default so every new flight of the type starts pre-configured.
         # (Loadout has its own "Save Payload"; laser code has a global setting.)
         aircraft_layout.addLayout(self._build_flight_defaults_row())
@@ -515,10 +515,10 @@ class QFlightPayloadTab(QFrame):
             self.member_selector.selected_member.livery = livery
             self.member_selector.selected_member.use_livery_set = use_livery_set
 
-    # 414th (§43): per-aircraft "save flight defaults" -- persist the fuel +
+    # RetLab (§43): per-aircraft "save flight defaults" -- persist the fuel +
     # property-editor knobs so a new flight of this type starts pre-configured.
     def _build_flight_defaults_row(self) -> QHBoxLayout:
-        from game.fourteenth import flight_defaults
+        from game.retlab import flight_defaults
 
         row = QHBoxLayout()
         row.addWidget(
@@ -547,7 +547,7 @@ class QFlightPayloadTab(QFrame):
         return row
 
     def _on_save_flight_defaults(self) -> None:
-        from game.fourteenth import flight_defaults
+        from game.retlab import flight_defaults
 
         name = self.flight.unit_type.display_name
         flight_defaults.save_defaults_for(
@@ -565,7 +565,7 @@ class QFlightPayloadTab(QFrame):
         )
 
     def _on_clear_flight_defaults(self) -> None:
-        from game.fourteenth import flight_defaults
+        from game.retlab import flight_defaults
 
         name = self.flight.unit_type.display_name
         flight_defaults.clear_defaults_for(self.flight.unit_type.dcs_unit_type.id)

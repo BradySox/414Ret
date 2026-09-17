@@ -11,7 +11,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 from typing import Any
 
-from game.fourteenth.naval_magazines import ASHM_MAGAZINE_BY_TYPE
+from game.retlab.naval_magazines import ASHM_MAGAZINE_BY_TYPE
 from game.missiongenerator.luagenerator import LuaData, LuaValue
 from game.missiongenerator.navalmagazineluadata import populate_naval_magazines_lua
 from game.theater import Player

@@ -23,7 +23,7 @@ from game import Game
 from game.ato.flight import Flight
 from game.ato.flightmember import FlightMember
 from game.data.weapons import Pylon
-from game.fourteenth import loadout_defaults
+from game.retlab import loadout_defaults
 from game.persistency import payloads_dir
 from qt_ui.blocksignals import block_signals
 from qt_ui.windows.mission.flight.payload.QPylonEditor import QPylonEditor
@@ -92,7 +92,7 @@ class QLoadoutEditor(QGroupBox):
         buttons.addWidget(purge_btn)
         vbox.addLayout(buttons)
 
-        # 414th (§73): make this loadout the one every future flight of this
+        # RetLab (§73): make this loadout the one every future flight of this
         # airframe+task is planned with, by writing it into the payload name the
         # planner resolves. Mirrors the "Save as default" pair on the aircraft
         # settings box, which covers fuel + cockpit properties.

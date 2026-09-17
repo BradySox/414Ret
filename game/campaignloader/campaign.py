@@ -62,7 +62,7 @@ class Campaign:
 
     #: Optional content tag for the New Game era shells (e.g. "vietnam"). Drives the
     #: "Vietnam Retribution" mode's campaign-list filter; None for ordinary campaigns.
-    #: See docs/dev/design/414th-vietnam-retribution-notes.md.
+    #: See docs/dev/design/retlab-vietnam-retribution-notes.md.
     era: Optional[str] = None
 
     @classmethod
@@ -220,7 +220,7 @@ class Campaign:
         campaign), so it always matches. Otherwise the campaign's own ``era`` tag
         must equal the requested one -- this is what the "Vietnam" card uses to show
         only ``era: vietnam`` campaigns. See
-        docs/dev/design/414th-vietnam-retribution-notes.md.
+        docs/dev/design/retlab-vietnam-retribution-notes.md.
         """
         return era is None or self.era == era
 

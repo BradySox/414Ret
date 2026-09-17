@@ -5,7 +5,7 @@ two-hour sortie was discarded, and each feature that needed more cut its own
 channel through `state.json` -- there are seven. This is the general form those
 should collapse into, so the next feature needing mission facts extends a schema
 instead of punching another hole. See
-`docs/dev/design/414th-retribution-long-view.md` seam 1.
+`docs/dev/design/retlab-retribution-long-view.md` seam 1.
 
 Written by `resources/plugins/base/sortie_recorder.lua`, which uses nothing
 outside vanilla DCS. Notably NOT Tacview: it is a paid third-party program, so a

@@ -8,7 +8,7 @@ from typing import Iterator, List, Optional, TYPE_CHECKING, Tuple
 from game.config import RUNWAY_REPAIR_COST
 from game.data.units import UnitClass
 from game.dcs.groundunittype import GroundUnitType
-from game.fourteenth.adaptive_procurement import repair_air_defenses
+from game.retlab.adaptive_procurement import repair_air_defenses
 from game.theater import ControlPoint, MissionTarget, ParkingType, Player
 
 if TYPE_CHECKING:

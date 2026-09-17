@@ -8,7 +8,7 @@ units:
   - SAM SA-20 S-300PMU1 TR 30N6E
   - SAM SA-20 S-300PMU1 LN 5P85CE
   - SAM SA-20 S-300PMU1 LN 5P85DE
-  # 414th: battery support section (cargo / fuel / power slots)
+  # RetLab: battery support section (cargo / fuel / power slots)
   - Truck GAZ-66
   - Truck KAMAZ 43101
   - Truck Ural-375

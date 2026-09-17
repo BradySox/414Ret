@@ -128,7 +128,7 @@ def set_region_priority(
             status.HTTP_404_NOT_FOUND,
             detail=f"Game has no control point with ID {cp_id}",
         )
-    from game.fourteenth.region_priorities import RegionPriority
+    from game.retlab.region_priorities import RegionPriority
 
     try:
         cp.blue_region_priority = RegionPriority(priority)

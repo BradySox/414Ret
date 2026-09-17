@@ -3,7 +3,7 @@
 Measures where red's offensive effort goes, turn by turn, and how long it stays
 there after the player reinforces the axis red is pushing.
 
-The card is `docs/dev/design/414th-retribution-long-view.md`, seam 7. Read it
+The card is `docs/dev/design/retlab-retribution-long-view.md`, seam 7. Read it
 before changing anything here: the thresholds are pre-registered and this script
 is only the instrument.
 

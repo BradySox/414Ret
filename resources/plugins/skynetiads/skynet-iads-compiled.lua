@@ -15,7 +15,7 @@ samTypesDB = {
 					['NATO'] = 'Flat Face',
 				},
 			},
-			-- 414th: the SA-5 Legacy Site layouts pair the S-200 with a Tall King.
+			-- RetLab: the SA-5 Legacy Site layouts pair the S-200 with a Tall King.
 			['P14_SR'] = {
 				['name'] = {
 					['NATO'] = 'Tall King',

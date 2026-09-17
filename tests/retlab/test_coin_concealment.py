@@ -1,0 +1,301 @@
+"""Concealment: un-engaged COIN spawns render as uncertainty areas.
+
+Locks the server-side jitter contract (deterministic, bounded, true position inside
+the circle, never applied once discovered) and the COIN spawn-side flag plumbing.
+
+Only the intrinsic `concealed` flag conceals. The category-based rule that hid
+every mobile SAM / vehicle group / missile site behind a circle went with the
+scout-to-reveal model (2026-08-18); an ordinary enemy site now draws an exact
+marker from turn one and only its composition is fogged.
+"""
+
+from __future__ import annotations
+
+import math
+import uuid
+from types import SimpleNamespace
+from typing import Any, Optional
+
+import game.retlab.coin as coin
+from game.data.groups import GroupTask
+from game.server.tgos.models import (
+    CONCEALED_RADIUS_M,
+    _CONCEALED_MAX_OFFSET,
+    _CONCEALED_MIN_OFFSET,
+    _ROUTE_JITTER_MAX_M,
+    _ROUTE_JITTER_MIN_M,
+    concealed_uncertainty,
+)
+
+
+class _Point:
+    def __init__(self, x: float, y: float, terrain: Any = None) -> None:
+        self.x = x
+        self.y = y
+        self._terrain = terrain
+
+
+class _Tgo:
+    def __init__(
+        self,
+        concealed: bool = False,
+        known: bool = False,
+        category: str = "armor",
+        task: Optional[GroupTask] = None,
+    ) -> None:
+        self.id = uuid.UUID(int=0x414)
+        self.concealed = concealed
+        self._known = known
+        self.category = category
+        self.task = task
+        self.concealed_route: Optional[list[tuple[float, float]]] = None
+        self.position = _Point(100_000.0, -50_000.0)
+        self.control_point = SimpleNamespace(
+            coalition=SimpleNamespace(game=SimpleNamespace())
+        )
+
+    def known_for(self, viewer: Optional[Any] = None) -> bool:
+        return self._known
+
+
+def test_unconcealed_or_known_tgos_have_no_uncertainty() -> None:
+    assert concealed_uncertainty(_Tgo(concealed=False, known=False)) is None  # type: ignore[arg-type]
+    # Discovered (engaged, fog off, or the fog-overview reveal): exact marker.
+    assert concealed_uncertainty(_Tgo(concealed=True, known=True)) is None  # type: ignore[arg-type]
+
+
+def test_concealed_tgo_gets_a_bounded_deterministic_jitter() -> None:
+    tgo = _Tgo(concealed=True, known=False)
+    result = concealed_uncertainty(tgo)  # type: ignore[arg-type]
+    assert result is not None
+    centre, radius = result
+    assert radius == CONCEALED_RADIUS_M
+    offset = math.hypot(centre.x - tgo.position.x, centre.y - tgo.position.y)
+    # Bounded: never dead-on the target, and the true position always inside the
+    # circle (max offset < radius).
+    assert _CONCEALED_MIN_OFFSET * radius <= offset <= _CONCEALED_MAX_OFFSET * radius
+    # Deterministic: the circle must not wander between refreshes/reloads, or the
+    # player could triangulate the true position.
+    again = concealed_uncertainty(tgo)  # type: ignore[arg-type]
+    assert again is not None
+    assert (again[0].x, again[0].y) == (centre.x, centre.y)
+
+
+def test_different_tgos_jitter_differently() -> None:
+    a = _Tgo(concealed=True, known=False)
+    b = _Tgo(concealed=True, known=False)
+    b.id = uuid.UUID(int=0x415)
+    ra = concealed_uncertainty(a)  # type: ignore[arg-type]
+    rb = concealed_uncertainty(b)  # type: ignore[arg-type]
+    assert ra is not None and rb is not None
+    assert (ra[0].x, ra[0].y) != (rb[0].x, rb[0].y)
+
+
+def test_jitter_works_on_a_real_preset_location_position() -> None:
+    """Regression (2026-07-05 blank-map bug): a real TGO's position is a
+    PresetLocation (PointWithHeading subclass) whose constructor is
+    (name, position, heading) — the jitter must never rebuild the point via
+    pos.__class__, or every concealed TGO 500s the /game payload with fog on."""
+    from game.theater import PresetLocation
+    from game.utils import Heading
+
+    tgo = _Tgo(concealed=True, known=False)
+    tgo.position = PresetLocation(  # type: ignore[assignment]
+        "REGRESSION",
+        _Point(100_000.0, -50_000.0),  # type: ignore[arg-type]
+        Heading.from_degrees(90),
+    )
+    result = concealed_uncertainty(tgo)  # type: ignore[arg-type]
+    assert result is not None
+    centre, radius = result
+    offset = math.hypot(centre.x - tgo.position.x, centre.y - tgo.position.y)
+    assert _CONCEALED_MIN_OFFSET * radius <= offset <= _CONCEALED_MAX_OFFSET * radius
+
+
+def test_route_pinned_tgo_slides_far_along_the_road_only() -> None:
+    """A roadside IED carrying `concealed_route` jitters ALONG its road (the player
+    knows what highway it's on, not which stretch) — far, on the polyline, never a
+    radial offset into the fields."""
+    tgo = _Tgo(concealed=True, known=False)
+    tgo.concealed_route = [(0.0, 0.0), (200_000.0, 0.0)]  # a straight E-W highway
+    tgo.position = _Point(100_000.0, 250.0)  # the device, just off the centreline
+    result = concealed_uncertainty(tgo)  # type: ignore[arg-type]
+    assert result is not None
+    centre, radius = result
+    assert radius == CONCEALED_RADIUS_M
+    # On the road, not beside it.
+    assert abs(centre.y) < 1.0
+    # FAR along it — well past the radial bound, but inside the slide range.
+    slide = abs(centre.x - 100_000.0)
+    assert _ROUTE_JITTER_MIN_M <= slide <= _ROUTE_JITTER_MAX_M
+    # Deterministic (a wandering circle would let the player triangulate).
+    again = concealed_uncertainty(tgo)  # type: ignore[arg-type]
+    assert again is not None
+    assert (again[0].x, again[0].y) == (centre.x, centre.y)
+
+
+def test_route_pinned_slide_stays_on_a_short_road() -> None:
+    tgo = _Tgo(concealed=True, known=False)
+    tgo.concealed_route = [(0.0, 0.0), (8_000.0, 0.0)]
+    tgo.position = _Point(4_000.0, 0.0)
+    result = concealed_uncertainty(tgo)  # type: ignore[arg-type]
+    assert result is not None
+    centre = result[0]
+    assert 0.0 <= centre.x <= 8_000.0 and abs(centre.y) < 1.0
+
+
+def test_degenerate_route_falls_back_to_the_radial_jitter() -> None:
+    tgo = _Tgo(concealed=True, known=False)
+    tgo.concealed_route = [(100_000.0, -50_000.0)]  # one point — not a road
+    result = concealed_uncertainty(tgo)  # type: ignore[arg-type]
+    assert result is not None
+    centre, radius = result
+    offset = math.hypot(centre.x - tgo.position.x, centre.y - tgo.position.y)
+    assert _CONCEALED_MIN_OFFSET * radius <= offset <= _CONCEALED_MAX_OFFSET * radius
+
+
+def _radius_for(tgo: _Tgo) -> Optional[float]:
+    result = concealed_uncertainty(tgo)  # type: ignore[arg-type]
+    return None if result is None else result[1]
+
+
+def test_ordinary_enemy_sites_never_conceal() -> None:
+    """No category earns a circle any more -- an un-engaged mobile SAM, vehicle
+    group or missile site draws an exact marker and only its composition is
+    fogged. Regression guard for the 2026-08-18 removal: reintroducing a
+    category rule here would put the scout-to-reveal hunt back."""
+    for category in ("armor", "missile", "factory", "ship", "ewr"):
+        assert _radius_for(_Tgo(category=category)) is None
+    for task in (GroupTask.MERAD, GroupTask.SHORAD, GroupTask.AAA, GroupTask.LORAD):
+        assert _radius_for(_Tgo(category="aa", task=task)) is None
+
+
+def test_the_coin_flag_is_what_conceals() -> None:
+    assert _radius_for(_Tgo(category="armor")) is None
+    assert _radius_for(_Tgo(concealed=True, category="armor")) == CONCEALED_RADIUS_M
+
+
+def _spawn_game() -> Any:
+    """The minimum spawn_red_ground_at needs: a red force group whose generate()
+    returns a bare TGO stand-in, plus theater/db stubs."""
+
+    class _Group:
+        def generate(
+            self, name: str, location: Any, cp: Any, game: Any, task: Any
+        ) -> Any:
+            return SimpleNamespace(id=uuid.uuid4(), sidc_entity_override=None)
+
+    return SimpleNamespace(
+        red=SimpleNamespace(
+            armed_forces=SimpleNamespace(random_group_for_task=lambda task: _Group())
+        ),
+        theater=SimpleNamespace(heading_to_conflict_from=lambda point: None),
+        db=SimpleNamespace(tgos=SimpleNamespace(add=lambda tgo_id, tgo: None)),
+    )
+
+
+def test_spawn_sets_the_concealed_flag() -> None:
+    game = _spawn_game()
+    cp = SimpleNamespace(connected_objectives=[])
+    point = _Point(0.0, 0.0)
+    exact = coin.spawn_red_ground_at(
+        game, cp, point, task=None, events=None  # type: ignore[arg-type]
+    )
+    assert exact.concealed is False
+    hidden = coin.spawn_red_ground_at(
+        game, cp, point, task=None, events=None, concealed=True  # type: ignore[arg-type]
+    )
+    assert hidden.concealed is True
+
+
+def test_jitter_seed_is_salted_and_not_recomputable_from_the_public_id() -> None:
+    """The TGO id ships to the client, so an id-only seed made the offset
+    reversible. The seed is now id XOR a per-campaign server-held salt --
+    stable within a campaign, different across campaigns, never the raw id."""
+    import random as _random
+
+    from game.server.tgos.models import _concealment_seed
+
+    tgo = _Tgo(concealed=True)
+    seed_a = _concealment_seed(tgo)  # type: ignore[arg-type]
+    assert seed_a == _concealment_seed(tgo)  # type: ignore[arg-type]
+    assert seed_a != tgo.id.int  # not the public id alone
+
+    # A different campaign (a different game object) draws a different salt, so
+    # the same TGO id jitters differently there.
+    other = _Tgo(concealed=True)
+    assert other.id == tgo.id
+    seed_b = _concealment_seed(other)  # type: ignore[arg-type]
+    assert seed_b != seed_a
+
+    # The salt persists on the game (it must survive save/load so the circle
+    # doesn't wander between sessions).
+    game = tgo.control_point.coalition.game
+    assert isinstance(game.concealment_salt, int)
+
+    # And the jitter itself stays deterministic per campaign.
+    a1 = concealed_uncertainty(tgo)  # type: ignore[arg-type]
+    a2 = concealed_uncertainty(tgo)  # type: ignore[arg-type]
+    assert a1 is not None and a2 is not None
+    assert (a1[0].x, a1[0].y) == (a2[0].x, a2[0].y)
+
+
+def test_cluster_members_keep_their_own_circles_and_report_size() -> None:
+    """The density-cloud contract (the 2026-07-18 same-day rework of the merged
+    circle — squadron read of the flown result: the disc covered one spot, not
+    the area the units hold): each member keeps its OWN bounded circle over its
+    own position, so the union covers the real spread and the client's stacked
+    fills darken where they overlap; ``concealed_cluster_size`` drives the
+    styling and drops as members are found."""
+    from game.server.tgos.models import concealed_cluster_size
+
+    a = _Tgo(concealed=True, known=False)
+    b = _Tgo(concealed=True, known=False)
+    b.id = uuid.UUID(int=0x415)
+    b.position = _Point(103_000.0, -52_000.0)
+    cp = a.control_point
+    b.control_point = cp
+    cp.connected_objectives = [a, b]
+
+    ra = concealed_uncertainty(a)  # type: ignore[arg-type]
+    rb = concealed_uncertainty(b)  # type: ignore[arg-type]
+    assert ra is not None and rb is not None
+    for member, (centre, radius) in ((a, ra), (b, rb)):
+        offset = math.hypot(centre.x - member.position.x, centre.y - member.position.y)
+        assert offset <= _CONCEALED_MAX_OFFSET * radius  # truth inside OWN circle
+    assert (ra[0].x, ra[0].y) != (rb[0].x, rb[0].y)  # geometry is never merged
+    assert concealed_cluster_size(a) == 2  # type: ignore[arg-type]
+    assert concealed_cluster_size(b) == 2  # type: ignore[arg-type]
+
+    # A discovered member snaps to truth and leaves the cluster; the survivor
+    # still conceals, now styled as a lone dashed ring again.
+    a._known = True
+    assert concealed_uncertainty(a) is None  # type: ignore[arg-type]
+    assert concealed_uncertainty(b) is not None  # type: ignore[arg-type]
+    assert concealed_cluster_size(b) == 1  # type: ignore[arg-type]
+
+
+def test_road_pinned_circles_never_join_a_cluster() -> None:
+    """A roadside IED's circle is a highway search domain — merging it into the
+    stronghold blob would break the 'which street' read."""
+    site = _Tgo(concealed=True, known=False)
+    ied = _Tgo(concealed=True, known=False)
+    ied.id = uuid.UUID(int=0x416)
+    ied.concealed_route = [(90_000.0, -60_000.0), (140_000.0, -60_000.0)]
+    ied.position = _Point(110_000.0, -60_000.0)
+    cp = site.control_point
+    ied.control_point = cp
+    cp.connected_objectives = [site, ied]
+
+    r_site = concealed_uncertainty(site)  # type: ignore[arg-type]
+    r_ied = concealed_uncertainty(ied)  # type: ignore[arg-type]
+    assert r_site is not None and r_ied is not None
+    # The IED slid along its road (same y), independent of the site's circle.
+    assert r_ied[0].y == -60_000.0
+    assert (r_site[0].x, r_site[0].y) != (r_ied[0].x, r_ied[0].y)
+    # Neither counts the other: the road-pin is always a lone ring, and the
+    # site's cluster census skips road-pinned siblings.
+    from game.server.tgos.models import concealed_cluster_size
+
+    assert concealed_cluster_size(ied) == 1  # type: ignore[arg-type]
+    assert concealed_cluster_size(site) == 1  # type: ignore[arg-type]

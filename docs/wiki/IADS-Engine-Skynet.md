@@ -8,12 +8,12 @@ and losing the right node degrades the whole network. That networked behavior is
 biggest reason SEAD and DEAD are planned the way they are in this fork — see
 [Air Defense and the Air War](Air-Defense-and-the-Air-War) and [Mission planning](Mission-planning).
 
-414Ret runs the same engine upstream does, **Skynet-IADS**, wired up automatically for every
+RetLab runs the same engine upstream does, **Skynet-IADS**, wired up automatically for every
 campaign. There is no engine to choose.
 
 ---
 
-![The campaign map with the enemy IADS network layer on: red SAM threat rings overlapping across the theater, with cyan command/early-warning links and green power/comms links tying the sites, EWRs, and command nodes together into one connected network](https://raw.githubusercontent.com/BradySox/414Ret/main/docs/wiki/img/map-iads-network.jpg)
+![The campaign map with the enemy IADS network layer on: red SAM threat rings overlapping across the theater, with cyan command/early-warning links and green power/comms links tying the sites, EWRs, and command nodes together into one connected network](https://raw.githubusercontent.com/BradySox/RetLab/main/docs/wiki/img/map-iads-network.jpg)
 
 *The enemy IADS as the map draws it: overlapping red threat rings, with the cyan links (track handoff / early warning) and green links (power & comms in advanced IADS) showing which nodes hold the network together — and therefore what's worth striking.*
 

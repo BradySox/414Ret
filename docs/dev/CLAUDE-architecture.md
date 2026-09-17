@@ -5,7 +5,7 @@ runtime behavior (EW, ISR, recon scoring, frontline firefights, ATC) is driven b
 plugins. When a feature has both, the Python side sets up and the Lua side executes — don't
 move runtime logic into the planner or vice versa.
 
-**Plugin script injection (the uniform late-init pass).** Most 414th plugins are normal
+**Plugin script injection (the uniform late-init pass).** Most RetLab plugins are normal
 work-order plugins. TIC and MooseAtis additionally need their main script loaded **after**
 every plugin's config table exists (their init reads `dcsRetribution.plugins.<name>` / MOOSE
 at file scope) — an ordering the per-plugin work-order pass can't express. They are `LuaPlugin`
@@ -61,7 +61,7 @@ would die silently in-mission, so this catches it before merge.
 
 ## Features at a Glance
 
-Full internals for each are in [414th-features.md](414th-features.md)
+Full internals for each are in [retlab-features.md](retlab-features.md)
 (section numbers below).
 
 1. **QRA intercept reserve** — per-squadron alert reserve feeding the upstream PR #782 Moose
@@ -82,7 +82,7 @@ Full internals for each are in [414th-features.md](414th-features.md)
 8. **Robustness / crash fixes** — flight-exit IndexError, AWACS/tanker orbit, malformed mod
    payload Lua.
 9. **TIC — Troops In Contact** — scripted frontline firefights with per-stance movement +
-   414th ambient-fire extension (plugin, default ON).
+   RetLab ambient-fire extension (plugin, default ON).
 10. **CurrentHill Iran assets pack** — Shahed-136, IRGCN FAC, `[CH] Iran 2020` faction.
 11. **Native DCS DTC cartridge export** — RETIRED (2026-06-26): half-baked; removed.
 12. **Recon engine** — REMOVED (2026-08-20): the §3 reveal rework left its captures with no

@@ -20,7 +20,7 @@ from game.theater import (
     NavalControlPoint,
     Player,
 )
-from game.fourteenth.region_priorities import planning_factor
+from game.retlab.region_priorities import planning_factor
 from game.ground_forces.ai_ground_planner import reserve_armor_for
 from game.squadrons.downedpilot import DownedPilot
 from game.theater.theatergroundobject import (

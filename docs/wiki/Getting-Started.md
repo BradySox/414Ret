@@ -2,7 +2,7 @@
 
 Install, set up a campaign, and fly your first turn.
 
-**414Ret** is the 414th Joint Fighter Group's fork of
+**RetLab** is a development fork of
 [DCS Retribution](https://github.com/dcs-retribution/dcs-retribution), a turn-based dynamic
 campaign generator for [DCS World](https://www.digitalcombatsimulator.com/en/products/world/).
 
@@ -19,8 +19,8 @@ results back and advances the campaign. Territory, losses, supply and your air w
 
 Releases publish automatically on every push to `main`. No GitHub account needed.
 
-1. **[Download the latest build](https://github.com/BradySox/414Ret/releases/tag/latest)** —
-   `414th-retribution-latest.zip`.
+1. **[Download the latest build](https://github.com/BradySox/RetLab/releases/tag/latest)** —
+   `retlab-latest.zip`.
 2. Extract it **outside `C:\Program Files`**. Program Files causes permission problems.
 3. Run `retribution_main.exe`.
 
@@ -35,7 +35,7 @@ Delete the previous extracted copy before unzipping a new one. Do not merge fold
 ```
 
 You need a working DCS install. Full upstream setup:
-[`README.upstream.md`](https://github.com/BradySox/414Ret/blob/main/README.upstream.md).
+[`README.upstream.md`](https://github.com/BradySox/RetLab/blob/main/README.upstream.md).
 
 ### Before you launch
 
@@ -51,7 +51,7 @@ This does not break the multiplayer integrity check, and the original is restore
 Point Retribution at your DCS World install and your `Saved Games\DCS` folder when prompted. It
 uses both to detect your modules and to write generated missions.
 
-![The New Game wizard's Introduction page, with the campaign-type radio buttons: Play an included campaign, and Vietnam (period Vietnam-only content)](https://raw.githubusercontent.com/BradySox/414Ret/main/docs/wiki/img/new-game-wizard.png)
+![The New Game wizard's Introduction page, with the campaign-type radio buttons: Play an included campaign, and Vietnam (period Vietnam-only content)](https://raw.githubusercontent.com/BradySox/RetLab/main/docs/wiki/img/new-game-wizard.png)
 
 *The New Game wizard. The fork adds a **Vietnam** content shell alongside the included campaigns.*
 
@@ -152,4 +152,4 @@ Accepting advances the front line and rolls the next turn.
 - [Squadrons and Pilots](Squadrons-and-Pilots) — squadrons and aircraft.
 - [Mission Planning](Mission-planning) — packages, tasks and flight plans in depth.
 - [The Retribution UI](The-Retribution-UI) — map, toolbar, panels, layers.
-- [414th Fork Overview](414th-Fork-Overview) — what the fork changes.
+- [RetLab Fork Overview](RetLab-Fork-Overview) — what the fork changes.

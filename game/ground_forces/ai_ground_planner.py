@@ -303,7 +303,7 @@ class GroundPlanner:
 
     def plan_groundwar(self) -> None:
         limit = self.cp.frontline_unit_count_limit
-        # 414th divergence from upstream #823: use the fork's frontline-eligible
+        # RetLab divergence from upstream #823: use the fork's frontline-eligible
         # inventory count (FRONTLINE_UNIT_CLASSES via base.total_frontline_units)
         # as the deployment denominator, NOT the raw total_armor. The set of
         # frontline classes equals _ROLE_BY_UNIT_CLASS's keys, so this is exactly

@@ -135,7 +135,7 @@ def _unit(unit_class: UnitClass) -> MagicMock:
 
 def _planner_with(armor: dict[MagicMock, int], limit: int) -> tuple[GroundPlanner, Any]:
     enemy = SimpleNamespace(id=uuid4(), captured=SimpleNamespace())
-    # 414th: the fork's plan_groundwar reads base.total_frontline_units (the
+    # RetLab: the fork's plan_groundwar reads base.total_frontline_units (the
     # FRONTLINE_UNIT_CLASSES-filtered count), not upstream's total_armor. All
     # fake units here are frontline classes, so the two counts are identical.
     cp = SimpleNamespace(

@@ -1,6 +1,6 @@
 """Vietnam Ops suite -> Lua config bridge (dcsRetribution.VietnamOps).
 
-The Vietnam Ops suite (docs/dev/design/414th-vietnam-ops-notes.md) adds opt-in
+The Vietnam Ops suite (docs/dev/design/retlab-vietnam-ops-notes.md) adds opt-in
 period mechanics that run inside the generated .miz via the ``vietnamops`` plugin.
 Following the IADS pattern, Python emits a data table and the Lua side executes the
 behavior. Each sub-feature is emitted **only when its Settings toggle is on**, so the
@@ -30,7 +30,7 @@ Features so far:
 
 **Convoy interdiction** (``vietnam_convoy_interdiction``) is intentionally NOT here: it emits
 no Lua node. Rather than spawn a phantom truck column at runtime, it now creates a *real*,
-tracked enemy convoy in the force model (``game/fourteenth/vietnam_convoy.py``, run from
+tracked enemy convoy in the force model (``game/retlab/vietnam_convoy.py``, run from
 ``finish_turn``) so interdicting it costs the opfor real reinforcements and the loss is
 recorded natively. See §35.
 """
@@ -80,7 +80,7 @@ def populate_vietnam_ops_lua(
 
     # Extend this guard as each suite feature lands. NB: vietnam_convoy_interdiction is
     # deliberately absent -- it no longer emits a Lua node. Convoy interdiction is now a
-    # real, tracked enemy convoy created in the force model (game/fourteenth/vietnam_convoy.py
+    # real, tracked enemy convoy created in the force model (game/retlab/vietnam_convoy.py
     # from finish_turn), not a phantom runtime spawn, so it needs nothing from the plugin.
     if not (
         settings.vietnam_arc_light
@@ -211,7 +211,7 @@ def _populate_super_gaggle(vietnam: "LuaItem", game: "Game") -> None:
 
     Models the Khe Sanh "Super Gaggle": a formation of transport helos runs supplies into a
     cut-off forward outpost while the player can fly escort. The geography + squadron selection
-    happen once per turn in ``game/fourteenth/super_gaggle.py`` (``plan_super_gaggle``), which
+    happen once per turn in ``game/retlab/super_gaggle.py`` (``plan_super_gaggle``), which
     draws the helos + suppressors from **real BLUE squadrons** and records the exact per-airframe
     unit names in ``game.super_gaggle_commitment``; the plugin spawns **exactly those** airframes,
     by name, **once** (no respawn), and a killed name is charged back to its squadron at debrief

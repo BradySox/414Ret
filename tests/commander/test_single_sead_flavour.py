@@ -3,7 +3,7 @@
 SEAD_ESCORT, SEAD_SWEEP and PlanDead's SEAD all carry EscortType.Sead, and
 check_needed_escorts sets that flag once for the whole package, so upstream can
 plan all three off a single radar-SAM trigger. Gated OFF by default under the
-2026-08-09 re-convergence contract; the 414th planner suite turns it on.
+2026-08-09 re-convergence contract; RetLab planner suite turns it on.
 """
 
 from __future__ import annotations

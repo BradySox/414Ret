@@ -25,7 +25,7 @@ role: Carrier-based Multirole Fighter
 default_livery: "VFA-34"
 # F10 ground speed, level at FL210, 2x GBU-31 + 2x FPU-8A. The fuel block below
 # was measured at 0.85 on a lighter jet; this knob is airframe-wide and takes the
-# loaded figure. See docs/dev/design/414th-cruise-mach-notes.md.
+# loaded figure. See docs/dev/design/retlab-cruise-mach-notes.md.
 cruise_mach: 0.78
 fuel:
   # Parking A1 to RWY 32 at Akrotiri.
@@ -83,5 +83,5 @@ date_gated_properties:
     JHMCS: 2003
 
 # Era gate for the DCS EPLRS (datalink) task. Sourcing and the permissive-when-absent
-# rule: docs/dev/design/414th-datalink-era-notes.md
+# rule: docs/dev/design/retlab-datalink-era-notes.md
 datalink_introduced: 2002

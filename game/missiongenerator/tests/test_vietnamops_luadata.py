@@ -7,7 +7,6 @@ from game.ato import FlightType
 from game.data.units import UnitClass
 from game.missiongenerator.luagenerator import LuaData
 from game.missiongenerator.vietnamopsluadata import (
-    HARASSMENT_FRONT_REACH_M,
     HEAVY_BOMBER_DCS_IDS,
     populate_vietnam_ops_lua,
 )
@@ -41,7 +40,6 @@ def _emit(
     ground_objects: list[Any] | None = None,
     control_points: list[Any] | None = None,
     fronts: list[Any] | None = None,
-    harassment: bool = False,
     coalitions: list[Any] | None = None,
     super_gaggle: bool = False,
     fac: bool = False,
@@ -54,7 +52,6 @@ def _emit(
             vietnam_arc_light=arc_light,
             vietnam_flak_gauntlet=flak,
             vietnam_naval_gunfire=ngfs,
-            vietnam_airbase_harassment=harassment,
             vietnam_super_gaggle=super_gaggle,
             vietnam_fac_marking=fac,
             vietnam_snake_and_nape=snake_nape,
@@ -215,13 +212,11 @@ class _GeoPoint:
 
 
 class _Field:
-    """A hashable duck-typed airfield/FARP/FOB ControlPoint for the harassment + Super
-    Gaggle emitters.
+    """A hashable duck-typed airfield/FARP/FOB ControlPoint for the Super Gaggle emitter.
 
-    The harassment emitter reads ``cptype``/``captured``/``position``/``full_name`` and puts
-    the CP in an *exclude* set, so (like ``_CP``) it must be hashable -- SimpleNamespace is
-    not. The Super Gaggle emitter additionally measures ``position.distance_to_point`` when
-    picking the launch field, so the position is a ``_GeoPoint``.
+    Hashable like ``_CP`` (SimpleNamespace is not); the emitter measures
+    ``position.distance_to_point`` when picking the launch field, so the position is a
+    ``_GeoPoint``.
     """
 
     def __init__(
@@ -242,91 +237,6 @@ def _field(
     name: str, cptype: ControlPointType, captured: Any, x: float, y: float = 0.0
 ) -> _Field:
     return _Field(name, cptype, captured, x, y)
-
-
-def _coalition_with_client_at(departure: Any) -> Any:
-    """A coalition whose ATO has one client flight departing (and recovering at) ``departure``."""
-    flight = SimpleNamespace(
-        client_count=1, departure=departure, arrival=departure, divert=None
-    )
-    package = SimpleNamespace(flights=[flight])
-    return SimpleNamespace(ato=SimpleNamespace(packages=[package]))
-
-
-def test_airbase_harassment_off_no_node() -> None:
-    near = _field("Da Nang", ControlPointType.AIRBASE, Player.RED, 10_000)
-    lua = _emit([], harassment=False, control_points=[near], fronts=[_front()])
-    assert "airbaseHarassment" not in lua
-
-
-def test_airbase_harassment_emits_forward_occupied_field() -> None:
-    near = _field("Da Nang", ControlPointType.AIRBASE, Player.RED, 10_000)
-    lua = _emit([], harassment=True, control_points=[near], fronts=[_front()])
-    assert "VietnamOps" in lua
-    assert "airbaseHarassment" in lua
-    assert "Da Nang" in lua
-
-
-def test_airbase_harassment_no_node_without_a_front() -> None:
-    # Forward-only by construction (design rule 4): no front -> nothing eligible -> no node.
-    near = _field("Da Nang", ControlPointType.AIRBASE, Player.RED, 10_000)
-    lua = _emit([], harassment=True, control_points=[near], fronts=[])
-    assert "airbaseHarassment" not in lua
-
-
-def test_airbase_harassment_skips_rear_neutral_and_non_airfield() -> None:
-    rear = _field(
-        "Rear Base",
-        ControlPointType.AIRBASE,
-        Player.RED,
-        HARASSMENT_FRONT_REACH_M + 5e4,
-    )
-    neutral = _field("Neutral Field", ControlPointType.AIRBASE, Player.NEUTRAL, 10_000)
-    carrier = _field(
-        "Carrier Grp", ControlPointType.AIRCRAFT_CARRIER_GROUP, Player.RED, 10_000
-    )
-    near = _field("Da Nang", ControlPointType.FARP, Player.RED, 10_000)
-    lua = _emit(
-        [],
-        harassment=True,
-        control_points=[rear, neutral, carrier, near],
-        fronts=[_front()],
-    )
-    assert "Da Nang" in lua
-    assert "Rear Base" not in lua  # too deep in the rear
-    assert "Neutral Field" not in lua  # unoccupied
-    assert "Carrier Grp" not in lua  # a ship, not a land ramp
-
-
-def test_airbase_harassment_never_targets_a_lone_client_spawn_field() -> None:
-    # The player's spawn field is the only field; excluding it leaves nothing eligible, so
-    # no harassment node is emitted at all -- the hard anti-grief guarantee (design rule 1).
-    spawn = _field("Player FARP", ControlPointType.FARP, Player.BLUE, 8_000)
-    lua = _emit(
-        [],
-        harassment=True,
-        control_points=[spawn],
-        fronts=[_front()],
-        coalitions=[_coalition_with_client_at(spawn)],
-    )
-    assert "airbaseHarassment" not in lua
-
-
-def test_airbase_harassment_client_spawn_field_is_excluded_not_targeted() -> None:
-    spawn = _field("Player FARP", ControlPointType.FARP, Player.BLUE, 5_000)
-    enemy = _field("Da Nang", ControlPointType.AIRBASE, Player.RED, 10_000)
-    lua = _emit(
-        [],
-        harassment=True,
-        control_points=[spawn, enemy],
-        fronts=[_front()],
-        coalitions=[_coalition_with_client_at(spawn)],
-    )
-    assert "Da Nang" in lua  # the enemy field is a target
-    assert "excludedFields" in lua
-    # The spawn field appears exactly once (in excludedFields) -- never as a target record,
-    # which would make it appear a second time as a `name = "Player FARP"` field entry.
-    assert lua.count("Player FARP") == 1
 
 
 # The Super Gaggle geography + squadron selection now live in game/fourteenth/super_gaggle.py

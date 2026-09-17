@@ -28,12 +28,11 @@ settings:
   plugins:
     vietnamops: true
   # Vietnam Ops period mechanics (era pre-seed). Jungle COIN -> no naval gunfire.
-  # Convoy interdiction hunts the enemy supply trail; airbase harassment presses the
-  # forward COIN strips; the Super Gaggle resupplies the cut-off checkpoints.
+  # Convoy interdiction hunts the enemy supply trail; the Super Gaggle resupplies the
+  # cut-off checkpoints.
   vietnam_arc_light: true
   vietnam_flak_gauntlet: true
   vietnam_convoy_interdiction: true
-  vietnam_airbase_harassment: true
   vietnam_super_gaggle: true
   vietnam_fac_marking: true
   vietnam_snake_and_nape: true

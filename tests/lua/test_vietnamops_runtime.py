@@ -4,8 +4,7 @@ First user of the lupa harness (tests/lua/harness.py): loads the real
 resources/plugins/vietnamops/vietnamops-config.lua into a Lua 5.1 interpreter
 against a faked DCS sandbox, drives the virtual mission clock, and asserts the
 plugin's observable behavior -- the config gates, the Arc Light release logic,
-the flak envelope, and the airbase-harassment grace period + player-field
-exclusion double-guard. These are the guarantees an in-game pass would
+and the flak envelope. These are the guarantees an in-game pass would
 otherwise be the first to exercise.
 """
 
@@ -239,77 +238,4 @@ class TestFlakGauntlet:
         assert (
             len(harness.records("explosions")) == before
         ), "a dead gun must stop firing without waiting for the AAA cache refresh"
-        harness.assert_no_lua_errors()
-
-
-class TestAirbaseHarassment:
-    def arm(
-        self,
-        harness: DcsPluginHarness,
-        fields: list[dict[str, Any]],
-        excluded: list[str],
-    ) -> None:
-        harness.set_retribution_config(
-            vietnam_ops={
-                "airbaseHarassment": {"fields": fields, "excludedFields": excluded}
-            }
-        )
-        harness.load_plugin_script(PLUGIN)
-
-    def test_grace_period_holds_fire(self, harness: DcsPluginHarness) -> None:
-        self.arm(
-            harness,
-            fields=[{"name": "Kutaisi", "x": 0, "y": 0, "coalition": "BLUE"}],
-            excluded=[],
-        )
-
-        harness.advance_to(299)  # inside the default 300 s grace
-
-        assert harness.records("explosions") == []
-        harness.assert_no_lua_errors()
-
-    def test_barrage_lands_after_grace(self, harness: DcsPluginHarness) -> None:
-        self.arm(
-            harness,
-            fields=[{"name": "Kutaisi", "x": 0, "y": 0, "coalition": "BLUE"}],
-            excluded=[],
-        )
-
-        # Grace 300 s + first randomized cadence (<= 1.5 * 240 s) is due by 660 s.
-        harness.advance_to(700)
-
-        barrage = harness.records("explosions")
-        assert barrage, "a watched field must draw fire once the grace expires"
-        assert all(b["t"] >= 300 for b in barrage)
-        # Impacts scatter over the ramp: within the 850 ft dispersion radius.
-        for impact in barrage:
-            assert math.hypot(impact["x"], impact["z"]) <= 850 * FT_TO_M + 1
-        # The per-barrage text popup is opt-in (harassAnnounce); the default is quiet --
-        # the barrage explosions ARE the cue, so no "Incoming" spam by default.
-        assert not any("Incoming" in t["text"] for t in harness.records("texts"))
-        harness.assert_no_lua_errors()
-
-    def test_excluded_player_field_is_never_shelled(
-        self, harness: DcsPluginHarness
-    ) -> None:
-        """The Lua-side double-guard: even if Python leaks a player field into the
-        target list, the excludedFields list must keep it safe."""
-        self.arm(
-            harness,
-            fields=[
-                {"name": "Kutaisi", "x": 0, "y": 0, "coalition": "BLUE"},
-                {"name": "Batumi", "x": 100000, "y": 100000, "coalition": "BLUE"},
-            ],
-            excluded=["Batumi"],
-        )
-
-        harness.advance_to(3600)  # a full hour of cadences
-
-        barrage = harness.records("explosions")
-        assert barrage
-        for impact in barrage:
-            distance_from_batumi = math.hypot(
-                impact["x"] - 100000, impact["z"] - 100000
-            )
-            assert distance_from_batumi > 10000, "the excluded field drew fire"
         harness.assert_no_lua_errors()

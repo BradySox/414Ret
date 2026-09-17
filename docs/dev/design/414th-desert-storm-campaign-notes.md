@@ -202,7 +202,7 @@ sanctioned, blockaded state.
 
 Deliberately NOT enabled: `enemy_comms_jamming` (§51 — Iraq jamming blue isn't the
 story), cruise missiles (§63 — no navy in the laydown, the map has no blue water
-here), `artillery_base_harassment` (the front CPs sit 119 km apart, out of reach).
+here), `artillery_base_harassment` (removed 2026-09-16 with §36).
 
 ## The will profile + phase arc
 

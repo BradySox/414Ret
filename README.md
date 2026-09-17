@@ -355,9 +355,9 @@ a period GCI ambush — scramble late, one slashing pass, run for home.
 **Mod content:** CurrentHill Iran assets, High Digit SAMs (Ultimate Compilation — S-400, SAMP/T,
 Pantsir-SM, period EWRs), and the optional Expanded F-4E Weapons Pack (check it on the Mods page
 to arm the Heatblur Phantom for Weasel SEAD; without the mod the jet falls back to stock Shrike
-fits). Plus a rebuilt settings screen with difficulty presets and an eight-mechanic Vietnam Ops
-page (Arc Light, flak gauntlet, naval gunfire, trail convoys, airbase harassment, Super Gaggle,
-FAC(A) marking, snake and nape).
+fits). Plus a rebuilt settings screen with difficulty presets and a seven-mechanic Vietnam Ops
+page (Arc Light, flak gauntlet, naval gunfire, trail convoys, Super Gaggle, FAC(A) marking,
+snake and nape).
 
 Existing campaigns keep whatever settings they were saved with.
 

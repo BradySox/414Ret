@@ -686,7 +686,11 @@ are kept on disk — they're generic resources, just no longer referenced by thi
 The upstream carve payload (`docs/dev/upstreaming/red-tide/`) is stale until
 `build_payload.py` is re-run. NEW game required to see the slimmed roster.
 
-### Frontline artillery harassment preseeded (2026-07-05)
+### Frontline artillery harassment preseeded (2026-07-05) — REMOVED 2026-09-16
+
+**The feature is gone and the preseed with it** (features doc §36): the barrage held every AI
+fixed-wing launch at the field it shelled for the rest of the mission. The history below is
+kept for reading old saves.
 
 `red_tide.yaml` now preseeds **`artillery_base_harassment: true`** — the generic mode of the
 §36 airbase-harassment runtime (features doc §36, "generic artillery mode"): fields within

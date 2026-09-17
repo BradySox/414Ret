@@ -246,7 +246,7 @@ is rooted in the real 1968 war. It demonstrates a different toolbox:
 - **Carrier-capable airframes only on carriers** — A-4E/A-6/F-8E/E-2C/RA-5C, not the land-based
   DCS F-4 (a real gotcha; see [Squadrons and Pilots](Squadrons-and-Pilots)).
 - **The whole Vietnam Ops suite** — Arc Light, flak, naval gunfire, convoy interdiction,
-  airbase harassment, Super Gaggle — pre-seeded in the `settings:` block, plus a
+  Super Gaggle — pre-seeded in the `settings:` block, plus a
   `red_tempo:` schedule so Hanoi answers the campaign clock. (It also carried the
   political-will economy and a Rolling Thunder → Linebacker II ROE arc; both were removed
   on 2026-07-21 — see [Removed](#removed-phases-roe-zones-and-political-will) above.)

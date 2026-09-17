@@ -187,14 +187,14 @@ FEATURES: tuple[Feature, ...] = (
         settings_fields=("vietnam_convoy_interdiction",),
     ),
     Feature(
-        # The generic artillery_base_harassment setting reuses this same
-        # emitter+runtime with a tight FLOT-gun-range reach (conventional
-        # campaigns; Red Tide preseeds it for the Fulda FARP).
+        # REMOVED 2026-09-16 (DM call). The barrage put DCS's airfield into its
+        # under-attack state and every AI fixed-wing launch at that field was held
+        # for the rest of the mission (tests 24, 31, 33, 34). The generic artillery
+        # mode went with it. Tombstone only.
         "vietnam_airbase_harassment",
         "Airbase harassment (rocket/mortar siege)",
         36,
-        plugin_id="vietnamops",
-        settings_fields=("vietnam_airbase_harassment", "artillery_base_harassment"),
+        retired=True,
     ),
     Feature(
         "vietnam_super_gaggle",

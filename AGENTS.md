@@ -105,7 +105,7 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
 | Afghanistan — Enduring Resolve (COIN) | `414th-coin-HANDOFF.md` — **start here for COIN** |
 | Caucasus — Iron Gate | `414th-iron-gate-campaign-notes.md` |
 | Nevada — Red Flag 81-2 | `414th-red-flag-81-campaign-notes.md` |
-| Vietnam set | `414th-vietnam-retribution-HANDOFF.md`, `-notes.md`, `-ops-notes.md`, `-red-tempo-notes.md`, `-airbase-harassment-notes.md` |
+| Vietnam set | `414th-vietnam-retribution-HANDOFF.md`, `-notes.md`, `-ops-notes.md`, `-red-tempo-notes.md` |
 | Iraq map 2.9.28 content | `414th-iraq-map-2928-notes.md` — authoring plan, not yet built |
 
 ### System notes — `docs/dev/design/`
@@ -392,7 +392,12 @@ linked design note.
   own cadence; upstream has flown it for years. Row G42 watches for a recurrence.
 - **Never restore the per-base backstop EWR** (§1). DCS has no non-colliding ground unit — the
   mast sat on taxiways and broke AI taxi routing. Detection is the IADS network alone; a side
-  with no EWR losing GCI is by design.
+  with no EWR losing GCI is by design. Second instance 2026-09-16 (test 35, Long Road to H3):
+  upstream's own Incirlik EWR marker sits on the south-west taxiway and the DM had to hand-move
+  it before anything would taxi. Any authored ground object inside a field's runway strip or
+  apron does this, not only the fork's mast. New Game now logs `Airfield clearance:` for every
+  ground object inside a runway band (300 m, 1.6 km) or 80 m of a stand
+  (`game/theater/airfieldclearance.py`); it warns, it never moves a marker.
 - **Never restore the generic `ewrj` fighter-pod jammer** (§2). Superseded by the C-130J
   platform.
 - **The C-130J cues; it never lases or designates.** It carries no targeting sensor in DCS,
@@ -419,6 +424,11 @@ linked design note.
   is still possible late in a mission.
 - **Never spawn phantom units.** Every scripted force is a real, tracked unit whose loss records
   natively. Applies to §35, §37, §50.
+- **Never script explosions on an airfield.** `trigger.action.explosion` inside a field's
+  area puts it into DCS's under-attack state and every AI fixed-wing launch there is held until
+  it clears; a recurring barrage never clears it. §36 harassment grounded whole wings this way
+  (tests 24, 31, 33, 34) and was removed 2026-09-16. Helicopters are unaffected; a one-off
+  strike is not this, a cadence is.
 - **A plugin toggle is a second gate.** An unticked plugin silently kills its setting — campaigns
   must preseed both (the §36 lesson).
 
@@ -450,7 +460,6 @@ linked design note.
 33. **AAA flak gauntlet** — barrage flak that tightens against predictable run-ins *(Vietnam Ops)*.
 34. **Naval gunfire support** — call-for-fire and automatic coastal bombardment *(Vietnam Ops)*.
 35. **Convoy interdiction** — real tracked trail convoys hunted via Armed Recon *(Vietnam Ops)*.
-36. **Airbase harassment** — standoff rocket/mortar fire on forward fields, never a player-spawn field *(Vietnam Ops)*.
 37. **Super Gaggle** — real squadron helos resupplying a cut-off outpost *(Vietnam Ops)*.
 38. **FAC(A) willie-pete marking** — an OV-10 marks the largest enemy concentration *(Vietnam Ops)*.
 39. **Snake and nape** — detonation-anchored napalm fire from a low fast release *(Vietnam Ops)*.
@@ -524,6 +533,7 @@ Kept numbered so old notes and saves stay readable. Details and rationale in the
 | 49 | Mobile missile relocation (the SCUD hunt) | Removed 2026-08-29 — never relocated a site in three flown attempts; test 24 measured 44.5 m against a 4,000 m radius |
 | 51 | Enemy comms jamming | Removed 2026-09-07 — abandoned; audio pressure that never changed the force model |
 | 70 | COMINT collection (and the red comms net) | Removed 2026-09-07 — abandoned entire: the collection tiers, the tasking leak, the concealed-site reveal and the audible net |
+| 36 | Airbase harassment (and the frontline artillery mode) | Removed 2026-09-16 — the barrage put the field into DCS's under-attack state and every AI fixed-wing launch there was held for the rest of the mission (tests 24, 31, 33, 34) |
 | 89 | Living battlespace | Removed 2026-09-07 — abandoned entire: pre-roll, recovery residue, follow-on waves and reactive red (P4's voice net had already gone 2026-08-18) |
 | 53 | War economy | Removed 2026-07-21 |
 | 54 | Munitions availability | Removed 2026-07-21 |

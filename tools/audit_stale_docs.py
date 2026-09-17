@@ -9,9 +9,10 @@ existed, including a sidebar-linked wiki page written in the present tense.
 
 That step is a manual grep nobody runs. This makes it a command.
 
-Scope is the **published** surface only -- ``README.md`` and ``docs/wiki/``.
-Design notes under ``docs/dev/`` are deliberately excluded: they are a
-historical record and are *expected* to describe dead features.
+Scope is the **published** surface only -- ``README.md``, ``docs/wiki/`` and the
+release-notes body inside ``.github/workflows/retlab-latest.yml``. Design notes
+under ``docs/dev/`` are deliberately excluded: they are a historical record and
+are *expected* to describe dead features.
 
 A file whose opening carries a removal banner (see ``BANNERS``) is exempt, so a
 page deliberately kept as a historical record does not trip the audit. No such
@@ -45,7 +46,16 @@ from typing import Iterable
 REPO = Path(__file__).resolve().parent.parent
 
 #: The published surface. Design notes are excluded on purpose -- see the module docstring.
-ROOTS = ("README.md", "docs/wiki")
+#:
+#: The release workflow is here because its notes body IS a published page -- the one
+#: README's download link lands on -- and it drifted furthest: the 2026-09-17 rebrand
+#: renamed it and left five removed features still advertised there, three of which
+#: this table already carried rows for and had never been pointed at.
+ROOTS = (
+    "README.md",
+    "docs/wiki",
+    ".github/workflows/retlab-latest.yml",
+)
 
 #: A file opening with one of these is a deliberate historical record, not a defect.
 BANNERS = ("⛔ REMOVED", "historical record only", "SUPERSEDED")

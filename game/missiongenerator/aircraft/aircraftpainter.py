@@ -20,7 +20,7 @@ class AircraftPainter:
     ) -> None:
         self.flight = flight
         self.group = group
-        # 414th (§62): sequences the squadron's livery set CAG-bird-first
+        # RetLab (§62): sequences the squadron's livery set CAG-bird-first
         # across the whole mission. None falls back to upstream's random pick,
         # which is what the tests and any un-plumbed caller get.
         self.livery_allocator = livery_allocator

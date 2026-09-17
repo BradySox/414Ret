@@ -2,9 +2,9 @@
 
 > **Adopted standard (2026-07-20).** This page is the upstream
 > [Motorpools](https://github.com/dcs-retribution/dcs-retribution/wiki/Motorpools) page,
-> adopted as the 414th's own standard for authoring motorpools. The fork runs this
+> adopted as RetLab's own standard for authoring motorpools. The fork runs this
 > feature as adopted from upstream (PR #859 plus follow-up fixes), so the behavior below
-> is identical here; fork specifics are in the **414th** section at the bottom. When
+> is identical here; fork specifics are in the **RetLab** section at the bottom. When
 > upstream revises their page, refresh this one.
 
 A **motorpool** is a strikeable vehicle park that renders a control point's
@@ -137,7 +137,7 @@ clear of the capture radius.
 * Upstream also notes Pretense mode is unsupported — moot in this fork, which does not
   ship Pretense at all.
 
-## 414th
+## RetLab
 
 * **Reference implementation: Red Tide.** The campaign authors a Garage A near
   **Haina**, the forward Soviet base at the Fulda Gap — "bomb the motor pool before its

@@ -19,7 +19,7 @@ from game.ato import Flight, FlightWaypoint, FlightType
 from game.ato.flightstate import InFlight, WaitingForStart
 from game.ato.flightwaypointtype import FlightWaypointType
 from game.ato.starttype import StartType
-from game.fourteenth.range_fuel import flight_external_fuel_lbs
+from game.retlab.range_fuel import flight_external_fuel_lbs
 from game.missiongenerator.aircraft.waypoints.cargostop import CargoStopBuilder
 from game.missiongenerator.missiondata import MissionData
 from game.missiongenerator.refuelrendezvous import refuel_rendezvous

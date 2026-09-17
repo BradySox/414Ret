@@ -16,11 +16,11 @@ ground truth, so the enemy never gets dumber because you are fogged.
 | Un-engaged site | position, category, allegiance, air-defence band, valid mission types | unit types, counts, live/dead state, threat ring, detection ring |
 | Engaged site | everything, including current damage | nothing |
 
-![The target intel dialog for an un-engaged enemy SAM site: known live units, detection range, and threat range all read Unknown, and the units list reads composition unknown](https://raw.githubusercontent.com/BradySox/414Ret/main/docs/wiki/img/fog-intel-not-scouted.png)
+![The target intel dialog for an un-engaged enemy SAM site: known live units, detection range, and threat range all read Unknown, and the units list reads composition unknown](https://raw.githubusercontent.com/BradySox/RetLab/main/docs/wiki/img/fog-intel-not-scouted.png)
 
 *Before — you know it exists, its band, and which missions are valid against it.*
 
-![The same site after engagement: known live units 9/9, detection range 54 NM, threat range 27 NM, and the full unit list resolved to SA-11 Buk Gadfly launchers, command, search radar, and support vehicles](https://raw.githubusercontent.com/BradySox/414Ret/main/docs/wiki/img/fog-intel-scouted.png)
+![The same site after engagement: known live units 9/9, detection range 54 NM, threat range 27 NM, and the full unit list resolved to SA-11 Buk Gadfly launchers, command, search radar, and support vehicles](https://raw.githubusercontent.com/BradySox/RetLab/main/docs/wiki/img/fog-intel-scouted.png)
 
 *After — 9/9 live, 54 NM detection, 27 NM threat, and the actual SA-11 Buk composition you now
 have to plan against.*

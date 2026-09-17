@@ -16,14 +16,14 @@
 > git checkout -b feature/recon-fog-of-war
 > git am path\to\fog-of-war-complete.patch
 > cd client && npm install && npm test    # client wasn't runnable in the carve env
-> # push to bradyccox/dcs-retribution and open the PR against dcs-retribution/dev
+> # push to BradySox/dcs-retribution and open the PR against dcs-retribution/dev
 > ```
 > The other files here are the working notes: `CARVE-MANIFEST.md` (the generic-vs-SCAR
 > -vs-PR#2 reasoning) and `0001-fog-of-war-new-files.patch` (just the new files —
 > superseded by the complete patch). Use the title/body below for the PR.
 
-Target: `dcs-retribution/dcs-retribution` `dev`. Carve from the 414th fork
-(`bradyccox/414Ret`). This is **PR #1 of a 2-PR stack**:
+Target: `dcs-retribution/dcs-retribution` `dev`. Carve from RetLab fork
+(`BradySox/RetLab`). This is **PR #1 of a 2-PR stack**:
 
 - **PR #1 (this kit): recon intel-fog + overview reveal toggle.** Self-contained,
   aircraft-agnostic, no fork features required. Hides enemy *site composition +

@@ -50,7 +50,7 @@ the results had been accepted in the app.
 Usage (full apply; paths quoted because of spaces)::
 
     .venv\\Scripts\\python.exe tools/apply_state_json.py ^
-        --source-save "C:\\...\\Saves\\414th red tide v5 6pm lock.retribution" ^
+        --source-save "C:\\...\\Saves\\414Ret red tide v5 6pm lock.retribution" ^
         --state "C:\\...\\DCS\\Missions\\state.json" ^
         --target-save "C:\\...\\Saves\\turn 0.retribution" ^
         --out-save "C:\\...\\Saves\\red tide new laydown TURN 2.retribution"

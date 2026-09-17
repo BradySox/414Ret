@@ -383,7 +383,7 @@ index 00000000..ec24d85f
 @@ -0,0 +1,34 @@
 +"""Transient "overview" reveal toggle for the recon fog-of-war.
 +
-+The 414th recon fog hides enemy composition, threat/detection rings, and SCAR
++RetLab recon fog hides enemy composition, threat/detection rings, and SCAR
 +command posts from the human side until they are scouted (see the viewer-aware
 +visibility layer in ``theatergroup``/``theatergroundobject``). This module adds a
 +single runtime switch that, while enabled, forces every player-facing fog

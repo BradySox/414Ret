@@ -5,7 +5,7 @@ groups:
   - SkySabre:
     - name: Search Radar
       unit_count:
-        # 414th: the Giraffe is this site's engagement radar (CAMM needs it)
+        # RetLab: the Giraffe is this site's engagement radar (CAMM needs it)
         # - guidance-radar redundancy, one HARM must not blind the site
         - 2
       unit_types:
@@ -38,7 +38,7 @@ groups:
       unit_classes:
         - Logistics
   - PD:
-    # 414th: must be "PD" -- the slot name is matched against the group name in
+    # RetLab: must be "PD" -- the slot name is matched against the group name in
     # 8_Launcher_Circle.miz, and a name with no matching group is silently
     # dropped. As "Point Defense" this slot never loaded, so a Sky Sabre battery
     # fielded no SHORAD at all.

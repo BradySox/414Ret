@@ -17,7 +17,7 @@ csar_rescued = {} -- UUID strings of downed pilots rescued by Ops.CSAR (see OpsC
 mission_ended = false
 dirty_state = false -- Track if state has changed and needs writing
 
--- Player-despawn loss guard (414th): a player dropping to spectator — or the
+-- Player-despawn loss guard (RetLab): a player dropping to spectator — or the
 -- mission ending with players still airborne — makes DCS fire S_EVENT_CRASH/DEAD
 -- for that aircraft, which would otherwise be counted as a combat loss and attrit
 -- the airframe even though the pilot survived (2026-06-20: GERBIL F-14s recorded

@@ -1,4 +1,4 @@
--- Upstream stock presets + the 414th "Retribution TARPS" recon fit appended.
+-- Upstream stock presets + RetLab "Retribution TARPS" recon fit appended.
 -- Do NOT strip to TARPS-only: pydcs ships no payloads, so a task with no named
 -- preset here resolves to an EMPTY loadout and the jet flies clean (the 2026-07-17
 -- Scenic Route finding: four BARCAP/Escort Tomcat flights launched with 0 pylons).

@@ -1,7 +1,7 @@
 """§50 convoy ambush -- the spring, authored as native DCS triggers.
 
 Locks the generation half of the feature (the force-model half is
-``tests/fourteenth/test_convoy_ambush.py``). These drive a **real** ``dcs.Mission`` with
+``tests/retlab/test_convoy_ambush.py``). These drive a **real** ``dcs.Mission`` with
 real vehicle groups rather than mocks, so what is asserted is the actual mission structure
 DCS will read: the dug-in options, the flag-gated ``ControlledTask`` spring, the trigger
 zone, and the trigger's conditions/actions -- plus that the whole thing still serializes.

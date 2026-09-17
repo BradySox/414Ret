@@ -1,7 +1,7 @@
 """Build resources/campaigns/operation_baltic_fury.miz from red_tide.miz.
 
 Reshapes the all-vanilla Red Tide GermanyCW miz into the Operation Baltic Fury
-laydown (docs/dev/design/414th-baltic-fury-campaign-notes.md):
+laydown (docs/dev/design/retlab-baltic-fury-campaign-notes.md):
 
 - Airport ownership flipped to the Baltic-approaches geometry: BLUE holds the
   German Bight corner (Nordholz, Bremen, Hamburg), RED holds the NE arc up to

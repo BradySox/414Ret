@@ -173,7 +173,7 @@ class BaseDamageGenerator:
         )
         # 2 s delay so MOOSE (COORDINATE) is loaded before we place the fires.
         lua = (
-            "-- 414th base battle damage: persistent fires at depleted bases "
+            "-- RetLab base battle damage: persistent fires at depleted bases "
             "(cosmetic; runway untouched)\n"
             f"local F={{{rows}}}\n"
             "timer.scheduleFunction(function()\n"
@@ -181,6 +181,6 @@ class BaseDamageGenerator:
             "    COORDINATE:NewFromVec2({x=p[1],y=p[2]}):BigSmokeAndFire(p[3],p[4])\n"
             "  end\nend, nil, timer.getTime()+2)\n"
         )
-        trigger = TriggerStart(comment="414th base battle damage")
+        trigger = TriggerStart(comment="RetLab base battle damage")
         trigger.add_action(DoScript(String(lua)))
         self.mission.triggerrules.triggers.append(trigger)

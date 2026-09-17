@@ -2,8 +2,8 @@
 
 > **Adopted standard (2026-07-20).** This page is the upstream
 > [Developer's Guide](https://github.com/dcs-retribution/dcs-retribution/wiki/Developer's-Guide),
-> adopted as the 414th's own development standard — we do things upstream's way.
-> Fork-specific differences are called out in **414th:** notes. When upstream revises
+> adopted as RetLab's own development standard — we do things upstream's way.
+> Fork-specific differences are called out in **RetLab:** notes. When upstream revises
 > their page, refresh this one and re-check the notes.
 
 Welcome to the dev guide!
@@ -16,7 +16,7 @@ It uses [pydcs](https://github.com/pydcs/dcs) to generate DCS World missions.
 Before contributing to DCS Retribution, you should also maybe consider contributing to
 pydcs — this is a great way to contribute indirectly to the project.
 
-**414th:** pydcs changes go to the upstream project's own fork,
+**RetLab:** pydcs changes go to the upstream project's own fork,
 [dcs-retribution/pydcs](https://github.com/dcs-retribution/pydcs) — that is where this
 project's pydcs pin points and where our pydcs PRs are sent. Runtime mission behavior
 additionally lives in **Lua 5.1 plugins** under `resources/plugins/` (MOOSE is the
@@ -33,13 +33,13 @@ The original UI was different, and the mission generation process was different 
 from version 2.0+.
 
 DCS Retribution is a 2022 fork of DCS Liberation and is the actively-maintained project
-this guide covers. **414Ret** is the 414th Joint Fighter Group's fork of DCS Retribution,
+this guide covers. **RetLab** is a development fork of DCS Retribution,
 carrying the squadron's features on top of upstream `dev` — see
-[What's Different in the 414th Fork](414th-Fork-Overview).
+[What's Different in RetLab Fork](RetLab-Fork-Overview).
 
 ## Required tools
 
-* [Python](https://www.python.org/downloads/) — upstream asks for 3.10+; **414th:** use
+* [Python](https://www.python.org/downloads/) — upstream asks for 3.10+; **RetLab:** use
   **Python 3.11**, which is what CI pins and what the shipped build runs.
 * A code editor for Python.
   [PyCharm Community Edition](https://www.jetbrains.com/pycharm/download/) is
@@ -56,7 +56,7 @@ come preinstalled.
 
 * Upstream **`dev`**: the upstream integration branch — the branch all *upstream* pull
   requests target.
-* **414th:** this fork's default and integration branch is **`main`**. Branch from
+* **RetLab:** this fork's default and integration branch is **`main`**. Branch from
   `main` and PR back to `main`; never develop directly on `main`. Work destined for
   upstream is carved separately against `dcs-retribution/dev` (see
   [Pull requests](#pull-requests)).
@@ -64,7 +64,7 @@ come preinstalled.
 Squadron members with repository access clone the fork directly:
 
 ```
-git clone https://github.com/BradySox/414Ret.git
+git clone https://github.com/BradySox/RetLab.git
 ```
 
 Outside contributors: fork the repository through the GitHub UI first (the upstream
@@ -80,7 +80,7 @@ environment if something goes wrong.
 To create and use a virtualenv, run:
 
 ```
-cd 414Ret
+cd RetLab
 python -m venv ./venv
 ```
 
@@ -107,9 +107,9 @@ pre-commit hooks that run the auto-formatter on commit.
 Whenever you open a new terminal, you'll need to re-run the activate command for your
 platform.
 
-**414th:** the DM's dev checkout names the environment `.venv` rather than `venv` (the
+**RetLab:** the DM's dev checkout names the environment `.venv` rather than `venv` (the
 validation commands in
-[`docs/dev/CLAUDE-ci.md`](https://github.com/BradySox/414Ret/blob/main/docs/dev/CLAUDE-ci.md)
+[`docs/dev/CLAUDE-ci.md`](https://github.com/BradySox/RetLab/blob/main/docs/dev/CLAUDE-ci.md)
 are written against `.venv`). Either name works — adjust paths to whichever your checkout
 uses.
 
@@ -142,7 +142,7 @@ npm run build
 If you're not developing the front-end (or the API boundary) that's enough. Otherwise,
 see `client/README.md`.
 
-**414th:** the React/Leaflet client is **not** type-checked in CI, and many fork features
+**RetLab:** the React/Leaflet client is **not** type-checked in CI, and many fork features
 carry a "needs the CI client rebuild" note — the release workflows always build the
 client fresh, so a stale local build only affects your own map view. Rebuild after every
 pull that touches `client/`.
@@ -212,8 +212,8 @@ The type checker is **not** run as part of pre-commit, since that makes it harde
 create WIP commits, but it is run as part of the PR and build checks, so it's best to run
 before uploading a PR.
 
-**414th: the full CI gate.** Every push to `main` runs (always-current list in
-[`docs/dev/CLAUDE-ci.md`](https://github.com/BradySox/414Ret/blob/main/docs/dev/CLAUDE-ci.md)):
+**RetLab: the full CI gate.** Every push to `main` runs (always-current list in
+[`docs/dev/CLAUDE-ci.md`](https://github.com/BradySox/RetLab/blob/main/docs/dev/CLAUDE-ci.md)):
 
 1. **Black over the whole tree** (`black --check .`) — a formatting miss anywhere fails
    CI, including `qt_ui` and `tests`; mypy stays scoped to `game` + `tests` as upstream
@@ -233,12 +233,12 @@ The local pre-push trio (PowerShell, against a `.venv` checkout):
 .venv\Scripts\python.exe -m pytest tests game/missiongenerator/tests game/missiongenerator/kneeboard_recon/tests game/plugins/tests -q
 ```
 
-**414th: Lua.** Plugins are Lua 5.1 sandbox scripts (no `os`/`io`, no `goto`, define
+**RetLab: Lua.** Plugins are Lua 5.1 sandbox scripts (no `os`/`io`, no `goto`, define
 functions before first use, vanilla DCS units only). Beyond the syntax gate, the headless
 harness in `tests/lua/` runs the real plugin scripts on Lua 5.1 (via `lupa`) against a
 faked DCS sandbox inside the normal pytest run — run and extend it when you touch a
 covered plugin. It models no DCS AI or physics, so real behavior still needs an in-game
-pass (tracked in `docs/dev/414th-ingame-pass-checklist.md`). When merging upstream Lua,
+pass (tracked in `docs/dev/retlab-ingame-pass-checklist.md`). When merging upstream Lua,
 grep it for `mist.` — MIST is retired here, and a symbol the compatibility shim lacks
 dies at runtime, not in CI.
 
@@ -249,7 +249,7 @@ dies at runtime, not in CI.
 ## Pull requests
 
 Please make a new branch and make your pull requests to the integration branch —
-**414th:** branch from `main`, PR to `BradySox/414Ret` `main`. (Upstream: branch from
+**RetLab:** branch from `main`, PR to `BradySox/RetLab` `main`. (Upstream: branch from
 `dev`, PR to `dcs-retribution/dev`.)
 
 We can only merge/revert whole PRs, which means you should try and keep the size of each
@@ -265,10 +265,10 @@ canary build), and changes with no intended user-observable behavior, such as a 
 If you're comfortable writing the note yourself, add it to `changelog.md` in the root of
 the project in the section for the upcoming release.
 
-**414th:** three fork-side additions to the upstream PR standard:
+**RetLab:** three fork-side additions to the upstream PR standard:
 
 * **Docs move with the code.** Update the doc faces in the order `CLAUDE.md` prescribes
-  (design note → `docs/dev/414th-features.md` → `README.md` if player-visible →
+  (design note → `docs/dev/retlab-features.md` → `README.md` if player-visible →
   `CLAUDE.md`/`AGENTS.md` → the in-game-pass checklist). A push that moves code past its
   docs is a broken push.
 * **Commit messages are release notes.** The rolling `latest` release generates its
@@ -278,7 +278,7 @@ the project in the section for the upcoming release.
   there is no permanent fork-only category. Generic fixes get carved into focused PRs
   against `dcs-retribution/dev` via the `BradySox/dcs-retribution` PR fork. Check the
   upstream-PR ledger in `CLAUDE.md` and
-  [`docs/dev/414th-upstreaming-inventory.md`](https://github.com/BradySox/414Ret/blob/main/docs/dev/414th-upstreaming-inventory.md)
+  [`docs/dev/retlab-upstreaming-inventory.md`](https://github.com/BradySox/RetLab/blob/main/docs/dev/retlab-upstreaming-inventory.md)
   first — including the "crowded zones" list of upstream areas with active third-party
   PRs that we do not carve into without coordinating.
 

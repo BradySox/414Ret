@@ -48,7 +48,7 @@ def _init_persistency(tmp_path_factory: pytest.TempPathFactory) -> None:
     # Unit-type loading reads user overrides from the DCS saved-game folder, which is
     # only configured once the app boots. Point it at an empty temp dir so loading
     # falls back to the bundled resources/ data (same fixture as
-    # tests/fourteenth/test_faction_mod_presets.py).
+    # tests/retlab/test_faction_mod_presets.py).
     persistency.setup(str(tmp_path_factory.mktemp("saved_games")), False, 0)
 
 

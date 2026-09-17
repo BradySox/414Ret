@@ -2,7 +2,7 @@
 
 > **Adopted standard (2026-07-20).** This page mirrors the upstream
 > [Creating shape files in QGIS for map data](https://github.com/dcs-retribution/dcs-retribution/wiki/Creating-shape-files-in-QGIS-for-map-data)
-> guide, adopted as the 414th's own standard for landmap data. The workflow and tool
+> guide, adopted as RetLab's own standard for landmap data. The workflow and tool
 > paths are identical in this fork (`unshipped_data/arcgis_maps/` and
 > `resources/tools/arcgis_landmap_import.py` both exist here). When upstream revises
 > their page, refresh this one.

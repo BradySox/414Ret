@@ -6,7 +6,7 @@ from game.commander.tasks.primitive.dead import PlanDead
 from game.commander.tasks.targetorder import shuffled_by_priority
 from game.commander.theaterstate import TheaterState
 from game.data.groups import GroupTask
-from game.fourteenth.region_priorities import auto_planning_skips
+from game.retlab.region_priorities import auto_planning_skips
 from game.htn import CompoundTask, Method
 from game.theater.theatergroundobject import IadsGroundObject, NavalGroundObject
 

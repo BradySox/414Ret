@@ -19,7 +19,7 @@ the unit files as ``datalink_introduced`` -- the same shape as the §24
 ``date_gated_properties`` era gate for payload options.
 
 Rationale and the per-airframe sourcing live in
-``docs/dev/design/414th-datalink-era-notes.md``.
+``docs/dev/design/retlab-datalink-era-notes.md``.
 """
 
 from __future__ import annotations

@@ -4,7 +4,7 @@ Retribution plans and spawns a mission in Python, but the **runtime behavior** i
 generated `.miz` — electronic warfare, recon scoring, frontline firefights, combat-SAR
 rescues — is driven by **Lua plugins** injected into the mission. This page explains
 how the plugin system works, the fork's hand-injected plugins, the Lua discipline the CI
-gate enforces, and lists the notable 414Ret plugins.
+gate enforces, and lists the notable RetLab plugins.
 
 ## How the plugin system works
 
@@ -69,9 +69,9 @@ Plugins must follow strict rules:
 
 The blocking **`lua-lint.yml`** CI workflow runs `luac5.1 -p` over every
 `resources/plugins/**/*.lua` as a syntax gate; an advisory luacheck pass (scoped to
-414th-authored scripts via `.luacheckrc`) reports counts but does not block. The syntax
+RetLab-authored scripts via `.luacheckrc`) reports counts but does not block. The syntax
 gate catches parse-time errors only — **runtime behavior still needs an in-game pass**
-(tracked in `docs/dev/414th-ingame-pass-checklist.md`).
+(tracked in `docs/dev/retlab-ingame-pass-checklist.md`).
 
 ## Per-plugin options UI
 

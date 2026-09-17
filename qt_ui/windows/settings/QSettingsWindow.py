@@ -753,11 +753,11 @@ class DifficultyPresetBar(QGroupBox):
 
 
 class PlannerSuiteBar(QGroupBox):
-    """The one-click 414th planner-suite switch atop the Campaign Doctrine page.
+    """The one-click RetLab planner-suite switch atop the Campaign Doctrine page.
 
     Since the 2026-08-09 re-convergence decision the settings DEFAULTS are the
     stock (upstream) planner behavior; this bar opts a campaign back into the
-    414th planner features, or resets them to stock, in one click (see
+    the RetLab planner features, or resets them to stock, in one click (see
     game/settings/plannersuite.py for the exact fields).
     """
 
@@ -773,8 +773,8 @@ class PlannerSuiteBar(QGroupBox):
         self.setLayout(outer)
 
         intro = QLabel(
-            "One click sets the 414th planner gates together: stock plans like "
-            "upstream DCS Retribution; the 414th suite turns on overlapping "
+            "One click sets the RetLab planner gates together: stock plans like "
+            "upstream DCS Retribution; the RetLab suite turns on overlapping "
             "BARCAP waves, SEAD-window strike timing, auto recon flights, "
             "weather-aware planning, escort jammers, adaptive procurement, "
             "and the continuous clock. Each can still be fine-tuned below."
@@ -783,7 +783,7 @@ class PlannerSuiteBar(QGroupBox):
         outer.addWidget(intro)
 
         row = QHBoxLayout()
-        for label, suite_on in (("Stock (upstream)", False), ("414th suite", True)):
+        for label, suite_on in (("Stock (upstream)", False), ("RetLab suite", True)):
             button = QPushButton(label)
             button.clicked.connect(lambda _checked=False, s=suite_on: self._on_apply(s))
             row.addWidget(button)
@@ -798,7 +798,7 @@ class PlannerSuiteBar(QGroupBox):
         if state is None:
             text = "Current: Custom"
         elif state:
-            text = "Current: 414th suite"
+            text = "Current: RetLab suite"
         else:
             text = "Current: Stock (upstream)"
         self.current_label.setText(text)
@@ -923,7 +923,7 @@ class QSettingsWidget(QtWidgets.QWizardPage, SettingsContainer):
                 container_layout.addWidget(page)
                 scroll.setWidget(container)
             elif name == PLANNER_SUITE_PAGE:
-                # Prepend the stock-vs-414th planner suite switch.
+                # Prepend the stock-vs-retlab planner suite switch.
                 container = QWidget()
                 container_layout = QVBoxLayout(container)
                 container_layout.setContentsMargins(0, 0, 0, 0)

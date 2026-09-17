@@ -7,7 +7,7 @@ so two silent failures are possible and have both bitten this fork:
 * a plugin **dir with a plugin.json that is NOT listed** -> it never loads. This
   is exactly how **BigEye** and **LotATC** were silently dropped (#262).
 
-Plus a denylist: plugins the 414th deliberately **retired** must not creep back
+Plus a denylist: plugins RetLab deliberately **retired** must not creep back
 (into the manifest *or* as a loadable dir) on an upstream-``dev`` merge.
 """
 
@@ -22,7 +22,7 @@ _REPO = Path(__file__).resolve().parents[1]
 _PLUGINS = _REPO / "resources" / "plugins"
 _MANIFEST = _PLUGINS / "plugins.json"
 
-# Deliberately retired in the 414th fork (most still ship upstream, so a merge
+# Deliberately retired in the RetLab fork (most still ship upstream, so a merge
 # could re-add them). See the changelog / feature list for the why of each.
 RETIRED_PLUGINS = {
     "arty",  # CG ArtySpotter fire-support script

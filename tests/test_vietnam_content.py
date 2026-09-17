@@ -162,7 +162,7 @@ def test_vietnam_campaigns_tagged_era_vietnam(campaign_file: str) -> None:
     campaign = Campaign.from_file(_CAMPAIGNS / campaign_file)
     assert campaign.era == "vietnam", (
         f"{campaign_file} must declare 'era: vietnam' so the New Game Vietnam shell "
-        "lists it. See docs/dev/design/414th-vietnam-retribution-notes.md."
+        "lists it. See docs/dev/design/retlab-vietnam-retribution-notes.md."
     )
 
 
@@ -489,7 +489,7 @@ def test_yankee_station_red_tempo() -> None:
     the Bombing Halt and rides the Linebacker ground offensive)."""
     import yaml
 
-    from game.fourteenth.red_tempo import parse_red_tempo
+    from game.retlab.red_tempo import parse_red_tempo
 
     data = yaml.safe_load(
         (_CAMPAIGNS / "1968_Yankee_Station.yaml").read_text(encoding="utf-8")

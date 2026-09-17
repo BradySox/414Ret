@@ -1,7 +1,7 @@
 """The C-130J "King" must never outrank a rescue helo for CSAR.
 
 Upstream restricts CSAR capability to helicopters, because the DCS AI ``Land`` task is
-helicopter-only and a fixed-wing rescuer just orbits the survivor. The 414th overrides
+helicopter-only and a fixed-wing rescuer just orbits the survivor. RetLab overrides
 that for the C-130J so the King can be flown as the on-scene commander it always was
 (``resources/units/aircraft/C-130J-30.yaml``).
 

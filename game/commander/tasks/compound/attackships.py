@@ -3,7 +3,7 @@ from collections.abc import Iterator
 from game.commander.tasks.primitive.antiship import PlanAntiShip
 from game.commander.tasks.targetorder import shuffled_by_priority
 from game.commander.theaterstate import TheaterState
-from game.fourteenth.region_priorities import auto_planning_skips
+from game.retlab.region_priorities import auto_planning_skips
 from game.htn import CompoundTask, Method
 
 

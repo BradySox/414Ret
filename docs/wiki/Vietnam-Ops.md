@@ -18,7 +18,7 @@ interdiction work in any era — but the page name follows the framing.
 > economy and the period planner ranges are baked in at campaign creation.
 
 Pass status for every feature below is tracked in
-[`docs/dev/414th-ingame-pass-checklist.md`](https://github.com/BradySox/414Ret/blob/main/docs/dev/414th-ingame-pass-checklist.md).
+[`docs/dev/retlab-ingame-pass-checklist.md`](https://github.com/BradySox/RetLab/blob/main/docs/dev/retlab-ingame-pass-checklist.md).
 
 ---
 

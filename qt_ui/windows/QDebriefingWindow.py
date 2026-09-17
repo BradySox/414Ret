@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
 )
 
 from game.debriefing import Debriefing
-from game.fourteenth.cruise_raids import debrief_expenditures
+from game.retlab.cruise_raids import debrief_expenditures
 from game.theater import Player
 from qt_ui.windows.GameUpdateSignal import GameUpdateSignal
 

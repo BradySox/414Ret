@@ -1,6 +1,6 @@
 """Outliers-only aircraft task-priority rebalance (dry-run by default).
 
-See docs/dev/design/414th-aircraft-task-rebalance-rubric.md.
+See docs/dev/design/retlab-aircraft-task-rebalance-rubric.md.
 
 Model: per-airframe base = its current top combat-task weight; target[task] =
 round(base * archetype_shape[task]). Only weights that ALREADY EXIST are touched

@@ -91,7 +91,7 @@ class CampaignStatusJs(BaseModel):
 
     @staticmethod
     def from_game(game: Game) -> CampaignStatusJs:
-        from game.fourteenth.victory import victory_description, victory_overview
+        from game.retlab.victory import victory_description, victory_overview
 
         victory_rows = [
             VictoryConditionJs(
@@ -101,7 +101,7 @@ class CampaignStatusJs(BaseModel):
         ]
         red_c2: str | None = None
         if getattr(game.settings, "c2_decapitation_effects", False):
-            from game.fourteenth.c2_decapitation import c2_status_line
+            from game.retlab.c2_decapitation import c2_status_line
             from game.theater.player import Player
 
             red_c2 = c2_status_line(game, Player.RED)
@@ -121,7 +121,7 @@ class CampaignStatusJs(BaseModel):
         if sitrep is not None and sitrep.has_news:
             sitrep_turn = sitrep.turn
             sitrep_lines = sitrep.kneeboard_lines()
-        from game.fourteenth.coin_hvt import active_hvt_status
+        from game.retlab.coin_hvt import active_hvt_status
 
         hvt_name: str | None = None
         hvt_turns_left: int | None = None

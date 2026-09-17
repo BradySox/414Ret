@@ -1,7 +1,7 @@
 """Ship cruise missile strikes -> Lua config bridge (``dcsRetribution.cruiseMissiles``).
 
 The §63 emitter. Python owns the campaign side (eligibility, the persisted
-per-group magazines, the auto-raid target pick — ``game/fourteenth/cruise_raids``);
+per-group magazines, the auto-raid target pick — ``game/retlab/cruise_raids``);
 this lists, for the ``cruisemissiles`` plugin:
 
 * ``ships`` — every live land-attack-capable ship group with missiles left
@@ -42,7 +42,7 @@ def populate_cruise_missiles_lua(
     if not getattr(game.settings, "cruise_missile_strikes", False):
         return
 
-    from game.fourteenth.cruise_raids import lacm_ships, plan_cruise_raids
+    from game.retlab.cruise_raids import lacm_ships, plan_cruise_raids
 
     ships = lacm_ships(game)
     if not ships:

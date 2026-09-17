@@ -62,7 +62,7 @@ class HomeBaseDefenseZone(MissionTarget):
     """A BARCAP orbit anchored *at* a friendly home airfield (base-defense CAP).
 
     Used as the package target for the player-manned QRA alert flight (§1, design
-    note 414th-qra-player-manning-notes.md). Unlike a control-point BARCAP -- whose
+    note retlab-qra-player-manning-notes.md). Unlike a control-point BARCAP -- whose
     racetrack is pushed forward toward the nearest enemy airfield --
     ``CapBuilder.cap_racetrack_for_objective`` lays this orbit straddling the base
     position itself, so the alert flight sits over the field it defends rather than

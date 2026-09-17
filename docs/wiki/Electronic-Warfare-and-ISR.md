@@ -1,6 +1,6 @@
 # Electronic Warfare and ISR
 
-414Ret models scripted electronic warfare and intelligence-gathering through a single platform:
+RetLab models scripted electronic warfare and intelligence-gathering through a single platform:
 the **C-130J flying the `JAMMING` flight type**, turned into an EC-130H Compass Call-style
 standoff jammer and an RC-130H Rivet Joint-style ELINT collector. A ~1,950-line in-mission
 script (`c130j_mission_systems.lua`) drives its runtime behavior from the cockpit. This is the

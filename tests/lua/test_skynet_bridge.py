@@ -1,4 +1,4 @@
-"""Headless check of the two 414th additions to the Skynet config bridge.
+"""Headless check of the two RetLab additions to the Skynet config bridge.
 
 The bridge (skynetiads-config.lua) is upstream's, plus:
 

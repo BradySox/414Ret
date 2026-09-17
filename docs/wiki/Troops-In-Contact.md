@@ -14,7 +14,7 @@ page ("Troops In Contact").
 - **Prolonged firefights.** Frontline tank/IFV/APC/ATGM groups become formation-keeping TIC
   combatants that hold a fighting line and exchange fire over a battle arc sized to roughly
   1.5–2 hours, rather than annihilating each other in seconds.
-- **Ambient suppressive fire.** The 414th extension adds area "suppression" fire: a combatant
+- **Ambient suppressive fire.** RetLab extension adds area "suppression" fire: a combatant
   with no line-of-sight target has a chance each firing cycle to lob a salvo near the closest
   enemy formation within about 6 km — tracers arc over line-of-sight blockers, but the fire
   is **not aimed for lethality**. It makes the line look and sound alive without turning into

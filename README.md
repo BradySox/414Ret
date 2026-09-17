@@ -1,12 +1,16 @@
-# 414Ret — 414th Joint Fighter Group's DCS Retribution Fork
+# RetLab — a development fork of DCS Retribution
 
-A squadron-focused build of [DCS Retribution](https://github.com/dcs-retribution/dcs-retribution),
+A development fork of [DCS Retribution](https://github.com/dcs-retribution/dcs-retribution),
 the turn-based dynamic campaign generator for
 [DCS World](https://www.digitalcombatsimulator.com/en/products/world/).
 
-Based on upstream `dev` at `dce851ea`, plus the 414th's feature set and selected later
+Based on upstream `dev` at `dce851ea`, plus this fork's feature set and selected later
 upstream fixes. The unmodified upstream README is kept as
 [`README.upstream.md`](README.upstream.md).
+
+This is not a replacement for DCS Retribution and is not offered as one. It exists so the
+features here can be built and flown before they are carved back upstream. If you want a
+supported build, use [DCS Retribution](https://github.com/dcs-retribution/dcs-retribution).
 
 > **AI assistants:** read [`CLAUDE.md`](CLAUDE.md) first — architecture, feature locations,
 > branch layout.
@@ -18,9 +22,9 @@ upstream fixes. The unmodified upstream README is kept as
 Pre-built `.exe` releases are published automatically on every push to `main`. No GitHub
 account needed.
 
-**[Download latest build](https://github.com/BradySox/414Ret/releases/tag/latest)**
+**[Download latest build](https://github.com/BradySox/RetLab/releases/tag/latest)**
 
-1. Download `414th-retribution-latest.zip`.
+1. Download `retlab-latest.zip`.
 2. Extract anywhere.
 3. Run `retribution_main.exe`.
 4. Point it at your DCS World install on first launch.
@@ -33,7 +37,7 @@ pinned campaign builds.
 ## What's different from upstream
 
 Most of this is opt-in. Full list with toggles, defaults and known limitations:
-[`docs/dev/414th-features.md`](docs/dev/414th-features.md).
+[`docs/dev/retlab-features.md`](docs/dev/retlab-features.md).
 
 ### Recon and intelligence
 
@@ -171,11 +175,11 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
 - Carriers steam for wind down the **angled** deck, not the bow, using each hull's own deck
   angle (9° Nimitz, 10.5° Forrestal, 7.95° Kuznetsov). BRC sits up to 15° off the wind
   reciprocal — that is the ship's real heading. New missions only.
-- Also: mixed frontline combat clusters, civilian traffic, 414th-tuned Splash Damage 3.
+- Also: mixed frontline combat clusters, civilian traffic, RetLab-tuned Splash Damage 3.
 
 ### Kneeboards and debrief
 
-- The kneeboard is the stock deck with 414th content folded into it. Mission Info opens on a
+- The kneeboard is the stock deck with RetLab content folded into it. Mission Info opens on a
   BLUF: task, target, TOT, code words, compact air and SAM threat picture, loadout summary,
   SAR drill.
 - The fuel ladder rides in the flight plan with RTB margin called out. It charges the whole
@@ -399,10 +403,10 @@ that later moved or was removed, every repo-local command fails the same confusi
 
 ---
 
-## Relationship to the 414th workspace
+## Relationship to the mission-building workspace
 
-The 414th maintains a separate, private mission-building workspace (campaign plans, `.miz`
-files, and Mission-Editor scripts not yet integrated here).
+A separate, private mission-building workspace sits alongside this repo (campaign plans,
+`.miz` files, and Mission-Editor scripts not yet integrated here).
 
 These started as standalone ME scripts and are now integrated — do not use the standalone
 versions:
@@ -419,5 +423,5 @@ rather than hand-placed in the Mission Editor.
 ## License
 
 DCS Retribution is LGPL (see [`LICENSE`](LICENSE)). Upstream authorship and history are
-preserved; 414th additions are under the same terms.
+preserved; RetLab additions are under the same terms.
 Upstream: <https://github.com/dcs-retribution/dcs-retribution>.

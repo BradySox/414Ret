@@ -15,7 +15,7 @@ def test_fresh_settings_are_stock() -> None:
 
     Every planner-suite gate's Settings default must be its stock value, so a
     fresh Settings detects as stock. If this fails, a default drifted back to
-    the 414th value without a decision.
+    RetLab value without a decision.
     """
     settings = Settings()
     for name, (stock, _suite) in PLANNER_SUITE_VALUES.items():

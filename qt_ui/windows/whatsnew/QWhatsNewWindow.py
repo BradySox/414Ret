@@ -1,6 +1,6 @@
 """The What's New window (§92) — recent changes, and what to look for.
 
-Reads ``resources/whatsnew.yaml`` through :mod:`game.fourteenth.whatsnew`. It
+Reads ``resources/whatsnew.yaml`` through :mod:`game.retlab.whatsnew`. It
 takes no ``Game``, because it describes the build rather than the campaign — the
 toolbar action is live before a save is opened, unlike Settings/Stats/Notes.
 """
@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 )
 
 import qt_ui.uiconstants as CONST
-from game.fourteenth.whatsnew import WhatsNewEntry, load_whats_new
+from game.retlab.whatsnew import WhatsNewEntry, load_whats_new
 from game.version import VERSION
 from qt_ui.uiconstants import URLS
 

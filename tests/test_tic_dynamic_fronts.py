@@ -2,7 +2,7 @@
 
 `FlotGenerator._plan_tic_action` encodes orders as TIC waypoint NAMES
 ("t+N hdg=H roe=simulate"). These tests pin the design decisions from
-docs/dev/design/414th-tic-dynamic-fronts-notes.md: stances produce distinct
+docs/dev/design/retlab-tic-dynamic-fronts-notes.md: stances produce distinct
 firing-line postures (no symmetric wall), DEFENSIVE digs in with a forward
 bound instead of idling at the rear spawn and only occasionally counterattacks,
 and the leg cadence is staggered per group.

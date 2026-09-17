@@ -44,4 +44,4 @@ scenario; this contributes it back as stock content.
   Baltic shipping lane and red naval objectives appear, Skynet wires the per-base C2 cells.
 - Content-only change: no engine code touched.
 
-*(Authored by Starfire & the 414th JFG; carved from the 414th's Retribution fork.)*
+*(Authored by Starfire & the RetLab; carved from RetLab's Retribution fork.)*

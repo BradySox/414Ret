@@ -358,7 +358,7 @@ class TheaterConfiguration(QtWidgets.QWizardPage):
 
         docsText = QtWidgets.QLabel(
             "<p>Campaign briefings and handbooks live on the "
-            '<a href="https://github.com/bradyccox/414Ret/wiki"><span style="color:#FFFFFF;">414th wiki</span></a>. '
+            '<a href="https://github.com/BradySox/RetLab/wiki"><span style="color:#FFFFFF;">RetLab wiki</span></a>. '
             "Want more? "
             '<a href="https://github.com/dcs-retribution/dcs-retribution/wiki/Community-campaigns"><span style="color:#FFFFFF;">Play a community campaign</span></a> '
             'or <a href="https://github.com/dcs-retribution/dcs-retribution/wiki/Custom-Campaigns"><span style="color:#FFFFFF;">create your own</span></a>.'

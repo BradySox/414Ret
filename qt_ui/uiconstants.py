@@ -5,16 +5,16 @@ from PySide6.QtGui import QPixmap
 
 from .liberation_theme import get_theme_icons
 
-# Repository / Issues / Releases point at the 414th fork (the build the squadron
+# Repository / Issues / Releases point at the RetLab fork (the build the squadron
 # runs and files issues against); the Manual/Forum stay on upstream, whose wiki this
 # fork still relies on for setup docs.
 URLS: Dict[str, str] = {
     "Manual": "https://github.com/dcs-retribution/dcs-retribution/wiki",
-    "Repository": "https://github.com/bradyccox/414Ret",
+    "Repository": "https://github.com/BradySox/RetLab",
     # Upstream's live forum thread (#903 retired the dead forums.eagle.ru URL).
     "ForumThread": "https://forum.dcs.world/topic/368593-dcs-retribution-dynamic-campaign-generator/",
-    "Issues": "https://github.com/bradyccox/414Ret/issues",
-    "Releases": "https://github.com/bradyccox/414Ret/releases",
+    "Issues": "https://github.com/BradySox/RetLab/issues",
+    "Releases": "https://github.com/BradySox/RetLab/releases",
 }
 
 LABELS_OPTIONS = ["Full", "Abbreviated", "Dot Only", "Neutral Dot", "Off"]
@@ -130,8 +130,8 @@ def load_icons():
     ICONS["Performance"] = ICONS["Generator"]
     # Vietnam Ops (period-ops suite) settings page.
     ICONS["Vietnam Ops"] = ICONS["Ordnance"]
-    # The 414th Features page — every fork feature's on/off gate in one place.
-    ICONS["414th Features"] = ICONS["Hangar"]
+    # The RetLab Features page — every fork feature's on/off gate in one place.
+    ICONS["RetLab Features"] = ICONS["Hangar"]
 
     ICONS["TaskCAS"] = QPixmap("./resources/ui/tasks/cas.png")
     ICONS["TaskCAP"] = QPixmap("./resources/ui/tasks/cap.png")

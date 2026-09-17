@@ -92,7 +92,7 @@ class Squadron:
     #: How many of ``intercept_reserve`` the player mans themselves on hot-alert
     #: (a cold-start base-defense BARCAP fragged at planning) instead of the AI
     #: dispatcher. 0 = none; bounded by the reserve. See game/squadrons/
-    #: intercept_reserve.py and docs/dev/design/414th-qra-player-manning-notes.md.
+    #: intercept_reserve.py and docs/dev/design/retlab-qra-player-manning-notes.md.
     qra_player_manned: int = 0
 
     #: When True, the player-manned QRA alert flight is crewed as a human *lead*

@@ -1,6 +1,6 @@
 """Build resources/campaigns/iraq_inherent_resolve.miz by decorating a hand-authored base.
 
-The Battle of Mosul, Oct 2016 -> Jul 2017 -- the 414th's second COIN campaign (sibling of
+The Battle of Mosul, Oct 2016 -> Jul 2017 -- RetLab's second COIN campaign (sibling of
 Operation Enduring Resolve). Like the ER build tool (which decorates Starfire's Shattered
 Dagger laydown), this now decorates a **hand-authored base**: `iraq_inherent_resolve_base.miz`
 is the miz the user positioned in the DCS Mission Editor to fit the real terrain (the 6
@@ -13,7 +13,7 @@ a continuous contested area rather than isolated clusters.
 Workflow: hand-tune the base in the ME -> add gap-filling FOBs here -> re-run. When the user
 hand-tunes a machine-added FOB, it graduates into the base (re-export the base) and comes off
 `NEW_FOBS`. Everything is deterministic (fixed offsets). Town XY come from real lat/lons
-through the Iraq terrain projection (the 414th supply-line standard).
+through the Iraq terrain projection (RetLab supply-line standard).
 
 Usage: python tools/build_iraq_inherent_resolve_miz.py
 """

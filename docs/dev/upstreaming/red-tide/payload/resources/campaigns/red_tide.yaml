@@ -1,7 +1,7 @@
 ---
 name: Germany - Red Tide
 theater: GermanyCW
-authors: Starfire, 414th JFG
+authors: Starfire, RetLab
 recommended_player_faction: Blufor Late Cold War (80s)
 recommended_enemy_faction: Russia 1988
 description:
@@ -41,7 +41,7 @@ version: "10.8"
 settings:
   squadron_start_full: true
   # Human-led offensive: keep the blue auto-planner cautious so the AI fills fewer of
-  # the ATO's offensive slots and the human's 414th sorties (F-16CM/F-A-18C/F-15E/
+  # the ATO's offensive slots and the human's RetLab sorties (F-16CM/F-A-18C/F-15E/
   # F-14B/A-10C/F-4E) carry the push. Recommended NEW-GAME defaults; the player can
   # still change them in the wizard.
   #

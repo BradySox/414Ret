@@ -81,4 +81,4 @@ striker and each escort. **~5 min**, on a flight you were flying anyway.
 Closed and dropped items, with the reasoning: [`ARCHIVE.md`](ARCHIVE.md).
 Contrived-condition tests live on [`LOCAL.md`](LOCAL.md).
 How to write an item, and the three-cadence model:
-[`414th-verification-cadence-notes.md`](../design/414th-verification-cadence-notes.md).
+[`retlab-verification-cadence-notes.md`](../design/retlab-verification-cadence-notes.md).

@@ -53,7 +53,7 @@ from game.ground_forces.combat_stance import CombatStance
 from game.point_with_heading import PointWithHeading
 from game.runways import RunwayAssigner, RunwayData
 from game.scenery_group import SceneryGroup
-from game.fourteenth.region_priorities import RegionPriority
+from game.retlab.region_priorities import RegionPriority
 from game.sidc import (
     Entity,
     LandInstallationEntity,
@@ -1635,7 +1635,7 @@ class NavalControlPoint(
                     CVN_72,
                     CVN_73,
                     CVN_75,
-                    # 414th: CVN-70 was registered as a usable hull 2026-08-04. A
+                    # RetLab: CVN-70 was registered as a usable hull 2026-08-04. A
                     # carrier missing from this list is treated as SUNK the moment
                     # a campaign bases on it, so it has to be added here too.
                     VINSON,

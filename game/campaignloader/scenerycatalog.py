@@ -10,7 +10,7 @@ clustering implementation:
   campaign-gen for any campaign on a scanned map (Strategy B).
 
 Design rationale and the two strategies live in
-``docs/dev/design/414th-scenery-import-notes.md``.
+``docs/dev/design/retlab-scenery-import-notes.md``.
 
 Pure stdlib on purpose: no pydcs / Retribution imports, so the emitter (run
 standalone) and the importer (run inside the game) can both consume it, and the

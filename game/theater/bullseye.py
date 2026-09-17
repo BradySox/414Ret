@@ -11,7 +11,7 @@ from game.utils import Distance, meters, nautical_miles
 #: before it is moved. Upstream re-derived the bullseye every turn, so it jumped
 #: whenever the nearest opposing pair changed -- but a squadron memorizes one
 #: bullseye and flies to it for weeks. Design note:
-#: docs/dev/design/414th-bullseye-notes.md.
+#: docs/dev/design/retlab-bullseye-notes.md.
 MAX_DRIFT: Distance = nautical_miles(80)
 
 

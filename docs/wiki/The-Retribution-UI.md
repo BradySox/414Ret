@@ -6,7 +6,7 @@ reading the debrief. Most planning starts by clicking something on the map.
 
 New here? Read [Getting Started](Getting-Started) first.
 
-![The 414Ret main window: the campaign control strip across the top, the ATO/packages and flights panels down the left, the live theater map in the center, the unified map layers panel at right, and the info panel along the bottom](https://raw.githubusercontent.com/BradySox/414Ret/main/docs/wiki/img/ui-overview.jpg)
+![The RetLab main window: the campaign control strip across the top, the ATO/packages and flights panels down the left, the live theater map in the center, the unified map layers panel at right, and the info panel along the bottom](https://raw.githubusercontent.com/BradySox/RetLab/main/docs/wiki/img/ui-overview.jpg)
 
 *Turn planning: top control strip, ATO and flights columns on the left, the map (a clicked SAM
 site's intel popup showing), and the layers panel on the right.*
@@ -67,7 +67,7 @@ Full workflow: [Mission Planning](Mission-planning).
 Upstream splits map display across two stock Leaflet controls. The fork replaces both with one
 dark-themed grouped panel.
 
-![The unified map layers panel: Default/SEAD/Recon/Clean preset buttons and a Clarity/Firefly/Topographic basemap row across the top, then collapsible groups — Friendly & shared, Air defences, Enemy intel (with the Reveal fog of war overview toggle), Allied & flight plans, Threat zones, Navmesh & terrain — and a Hide all overlays button](https://raw.githubusercontent.com/BradySox/414Ret/main/docs/wiki/img/map-layers-panel.png)
+![The unified map layers panel: Default/SEAD/Recon/Clean preset buttons and a Clarity/Firefly/Topographic basemap row across the top, then collapsible groups — Friendly & shared, Air defences, Enemy intel (with the Reveal fog of war overview toggle), Allied & flight plans, Threat zones, Navmesh & terrain — and a Hide all overlays button](https://raw.githubusercontent.com/BradySox/RetLab/main/docs/wiki/img/map-layers-panel.png)
 
 - **Grouped, collapsible sections** — Friendly & shared, Air defences, Enemy intel, Allied & flight
   plans, Threat zones, Navmesh & terrain. Advanced groups start collapsed.
@@ -125,7 +125,7 @@ Three other dialogs surface planner reasoning rather than raw numbers:
 - **Debrief** — leads with **Mission Impact**: end-state, bases captured and lost, runway damage
   and loss counts, above the full casualty tables.
 
-![The debrief's Casualty report, leading with a Mission Impact block — mission status, bases lost/captured, runway damage — above the per-side loss lists for both coalitions](https://raw.githubusercontent.com/BradySox/414Ret/main/docs/wiki/img/debrief-mission-impact.png)
+![The debrief's Casualty report, leading with a Mission Impact block — mission status, bases lost/captured, runway damage — above the per-side loss lists for both coalitions](https://raw.githubusercontent.com/BradySox/RetLab/main/docs/wiki/img/debrief-mission-impact.png)
 
 ---
 
@@ -133,4 +133,4 @@ Three other dialogs surface planner reasoning rather than raw numbers:
 
 - [Mission Planning](Mission-planning)
 - [Fog of War and Reconnaissance](Fog-of-War-and-Reconnaissance)
-- [414th Fork Overview](414th-Fork-Overview)
+- [RetLab Fork Overview](RetLab-Fork-Overview)

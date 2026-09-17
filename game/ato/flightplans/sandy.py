@@ -1,6 +1,6 @@
 """The rescue escort -- "Sandy".
 
-See docs/dev/design/414th-csar-notes.md.
+See docs/dev/design/retlab-csar-notes.md.
 
 Sandy is the armed half of a rescue package: an A-10 or an Apache working the
 ground around the survivor while the helo comes in for the pickup. It is the one

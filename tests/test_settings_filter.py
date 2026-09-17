@@ -53,13 +53,13 @@ def test_feature_gates_live_on_the_features_page() -> None:
 
 
 def test_feature_gate_list_matches_the_registry() -> None:
-    """The literal in settings.py must track game/fourteenth/features.py.
+    """The literal in settings.py must track game/retlab/features.py.
 
     settings.py cannot import the registry (game/__init__ already imports
     settings, so it would be circular), so the list is a literal kept honest
     here -- the same registry-plus-test discipline as the feature index.
     """
-    from game.fourteenth.features import FEATURES
+    from game.retlab.features import FEATURES
 
     settings = Settings()
     vietnam_page_fields = {

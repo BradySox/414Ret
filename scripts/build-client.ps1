@@ -19,7 +19,7 @@ $ErrorActionPreference = "Stop"
 
 function Write-Step {
     param([string]$Message)
-    Write-Host "[414Ret] $Message"
+    Write-Host "[RetLab] $Message"
 }
 
 # scripts/ -> repo root.
@@ -27,7 +27,7 @@ $RepoRoot = Split-Path -Parent $PSScriptRoot
 $ClientDir = Join-Path $RepoRoot "client"
 
 if (-not (Test-Path -LiteralPath (Join-Path $ClientDir "package.json"))) {
-    throw "No client/ found at $ClientDir -- run this from inside the 414Ret repo."
+    throw "No client/ found at $ClientDir -- run this from inside the RetLab repo."
 }
 
 if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {

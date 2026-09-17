@@ -624,8 +624,8 @@ class QLiberationWindow(QMainWindow):
         ]
         text = (
             "<h3>DCS Retribution " + VERSION + "</h3>" + "<b>Source code : </b>"
-            "<a href='https://github.com/bradyccox/414Ret' style='color:white'>"
-            "https://github.com/bradyccox/414Ret </a>"
+            "<a href='https://github.com/BradySox/RetLab' style='color:white'>"
+            "https://github.com/BradySox/RetLab </a>"
             + "<h4>Authors</h4>"
             + "<p>DCS Retribution is an (independent) fork of DCS Liberation, "
             "which was originally developed by <b>shdwp</b>. "

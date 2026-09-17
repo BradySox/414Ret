@@ -97,7 +97,7 @@ unmapped or multinational countries, so generation never breaks.
 ### Named liveries
 
 The **Germany – Red Tide** campaign replaces generic mismatched paint with named historical units
-wearing matching liveries — GSFG and VVS regiments on the red side, 414th Joint Fighter Group units
+wearing matching liveries — GSFG and VVS regiments on the red side, RetLab units
 on the blue side — so the air war stops spawning aircraft in liveries that do not fit the unit
 flying them.
 

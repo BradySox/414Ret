@@ -40,7 +40,7 @@ saves in Saved Games are hand-edited, and the numbers this tool first produced
 from them described the save rather than the planner. They are withdrawn.
 
 Sibling of `tools/measure_red_planner_headroom.py`; same four-line harness.
-Procedure: `docs/dev/design/414th-planner-doctrine-mining-notes.md`.
+Procedure: `docs/dev/design/retlab-planner-doctrine-mining-notes.md`.
 
 Run (several saves pool into one verdict, which is how the threshold is read):
     python tools/measure_tot_past_mission_window.py <save.retribution>... [--turns 3]

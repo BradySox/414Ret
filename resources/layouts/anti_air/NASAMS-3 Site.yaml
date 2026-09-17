@@ -6,7 +6,7 @@ groups:
   - SAM:
     - name: Search Radar
       unit_count:
-        # 414th: the Sentinel is this site's engagement radar (AMRAAM needs it)
+        # RetLab: the Sentinel is this site's engagement radar (AMRAAM needs it)
         # - guidance-radar redundancy, one HARM must not blind the site
         - 2
       unit_classes:
@@ -16,7 +16,7 @@ groups:
       optional: true # Allow groups without TR
       fill: false # Do not fill with faction possible units
       unit_count:
-        - 2 # 414th: guidance-radar redundancy - one HARM must not blind the site
+        - 2 # RetLab: guidance-radar redundancy - one HARM must not blind the site
       unit_classes:
         - TrackRadar
     - name: Command Post

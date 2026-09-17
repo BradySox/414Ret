@@ -334,7 +334,7 @@ def test_customized_payload_clsids_resolve_or_are_known_stragglers() -> None:
 
 
 # Deliberately-kept preset names in the fork namespace that intentionally match no loader
-# lookup. See docs/dev/design/414th-loadout-integrity-audit-notes.md ("2026-07-06
+# lookup. See docs/dev/design/retlab-loadout-integrity-audit-notes.md ("2026-07-06
 # upstream-baseline reset").
 #   - "Retribution CEAD": no CEAD FlightType exists; dead weight on A6E / CH_Su-27P1M /
 #     MiG-29MU2, deliberately left in place.

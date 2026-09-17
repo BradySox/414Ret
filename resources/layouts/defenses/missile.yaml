@@ -10,7 +10,7 @@ groups:
         - 3
       unit_classes:
         - Missile
-    # 414th (§85): the battery's support section.
+    # RetLab (§85): the battery's support section.
     #
     # A theatre-missile battery is not three launchers and a jeep, which is what
     # this layout generated: the real thing (see the 9K720 Iskander's own system
@@ -32,7 +32,7 @@ groups:
     - name: ScudGenerator 1
       optional: true
       unit_count:
-        # 414th: the textbook configuration is THE configuration (the §85 call) --
+        # RetLab: the textbook configuration is THE configuration (the §85 call) --
         # a fixed pair of cargo trucks, not a 0-2 roll that can leave a bare site.
         - 2
       # An explicit truck list rather than `unit_classes: [Logistics]`, because a

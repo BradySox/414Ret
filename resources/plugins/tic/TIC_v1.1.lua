@@ -71,7 +71,7 @@ env.info("TIC Script BEGIN " .. version)
 
 if GLSCO == nil then GLSCO = {} end
 
--- 414th perf: the GLSCO routines below emitted these lines via env.info on every combatant
+-- RetLab perf: the GLSCO routines below emitted these lines via env.info on every combatant
 -- every cycle, which on a dense battlefield floods dcs.log (DCS starts dropping -- "messages
 -- lost") and burns CPU (notably the per-combatant table serialize in logState()). Route the
 -- per-cycle chatter through a flag, default OFF; flip TIC_GLSCO_VERBOSE = true to restore it
@@ -975,7 +975,7 @@ function GLSCO_COMBATANT:New(group)
 			-- pollute the warning stream (can fire often on buggy ground pathing).
 			-- Name + running count separate "a few units recovered once" from "one
 			-- unit wedged all mission"; the anonymous line fired 846 times in 7
-			-- minutes and answered neither. 414th-tic-dynamic-fronts-notes.md.
+			-- minutes and answered neither. retlab-tic-dynamic-fronts-notes.md.
 			combatant.stuckRetries = (combatant.stuckRetries or 0) + 1
 			env.info(string.format(
 			   "OnBeforeArrived: unit is stuck; retrying move without roads [%s] (retry %d)",
@@ -2364,7 +2364,7 @@ end
 
 function GLSCO_COMBATANT:logState()
 
-   if not TIC_GLSCO_VERBOSE then return end  -- 414th perf: skip the per-combatant serialize unless debugging
+   if not TIC_GLSCO_VERBOSE then return end  -- RetLab perf: skip the per-combatant serialize unless debugging
 
    local state =
    {

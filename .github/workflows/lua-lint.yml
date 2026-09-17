@@ -1,12 +1,12 @@
 name: Lua Lint
 
-# Validates the DCS plugin Lua that drives all runtime 414th behavior (EW, ISR,
+# Validates the DCS plugin Lua that drives all runtime RetLab behavior (EW, ISR,
 # TIC, SCAR, TARS, IADS). DCS runs Lua 5.1 (LuaJIT) and a plugin
 # whose script fails to parse/load dies SILENTLY in-mission — the feature just
 # never starts. CI never exercised Lua before, so those failures only surfaced
 # in-game. This workflow closes that gap.
 #
-# Intentionally DECOUPLED from 414th-latest.yml: this never gates the rolling
+# Intentionally DECOUPLED from retlab-latest.yml: this never gates the rolling
 # release. The syntax-gate job is blocking (a real parse error is a real bug);
 # luacheck is advisory (continue-on-error) so warning noise can't wedge anyone.
 
@@ -55,13 +55,13 @@ jobs:
           exit $status
 
   luacheck:
-    name: luacheck (414th-authored, advisory)
+    name: luacheck (RetLab-authored, advisory)
     runs-on: ubuntu-latest
     # Advisory only: warnings inform but never block. The step always exits 0 so
     # this check reports GREEN — a permanently-red advisory check just trains
     # everyone to ignore it. The warning/error counts are surfaced in the run's
     # Step Summary instead. Tighten the .luacheckrc ignore list over time and,
-    # once the 414th scripts run clean, promote this to a blocking gate.
+    # once RetLab scripts run clean, promote this to a blocking gate.
     steps:
       - uses: actions/checkout@v4
 
@@ -71,16 +71,15 @@ jobs:
           sudo apt-get install -y lua5.1 luarocks
           sudo luarocks install luacheck
 
-      - name: Run luacheck on 414th-authored plugins (advisory)
+      - name: Run luacheck on RetLab-authored plugins (advisory)
         run: |
           set +e
+          # ewrj (§2), tars (§12) and scar (§21) were removed; luacheck errored on
+          # the missing paths in an advisory step that never blocks, so it went
+          # unnoticed. Only live targets here.
           out=$(luacheck \
             resources/plugins/c130j \
-            "resources/plugins/ewrj/EW script 2.1.lua" \
-            resources/plugins/ewrj/ewrj_config.lua \
-            resources/plugins/tic/tic_414_init.lua \
-            resources/plugins/tars/tars_414_init.lua \
-            resources/plugins/scar/scar_414_init.lua 2>&1)
+            resources/plugins/tic/tic_retlab_init.lua 2>&1)
           code=$?
           echo "$out"
           {

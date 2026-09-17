@@ -2,7 +2,7 @@
 
 Both halves answer the same measured defect: a package's light escorts ran ahead of
 the strikers they were escorting because that leg was the one transit segment every
-flight priced on its own. See docs/dev/design/414th-cruise-mach-notes.md.
+flight priced on its own. See docs/dev/design/retlab-cruise-mach-notes.md.
 """
 
 from __future__ import annotations

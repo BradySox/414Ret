@@ -1,6 +1,6 @@
 """Transient "overview" reveal toggle for the recon fog-of-war.
 
-The 414th recon fog hides an enemy site's composition and threat/detection
+RetLab recon fog hides an enemy site's composition and threat/detection
 rings, and hides SCAR command posts outright, until the player engages the site
 (see ``TheaterGroundObject.visibility_for``). This module adds a single runtime
 switch that, while enabled, forces every player-facing fog accessor to resolve

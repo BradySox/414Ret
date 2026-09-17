@@ -31,5 +31,5 @@ overview slide. Read them as images.
 
 Same set for Nellis/NTTR — comm card, overview card, spawn overview card, overview slide.
 
-These are useful as **format references** when authoring 414th briefing packs and role
+These are useful as **format references** when authoring RetLab briefing packs and role
 cards: they show how a squadron-level comm card and spawn overview are laid out.

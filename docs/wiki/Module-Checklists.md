@@ -9,7 +9,7 @@ adopted 2026-07-20, with the fork’s additions appended. Refresh when upstream 
 
 > **Adopted standard (2026-07-20).** This page is the upstream
 > [New aircraft module checklist](https://github.com/dcs-retribution/dcs-retribution/wiki/New-aircraft-module-checklist),
-> adopted as the 414th's own standard, with the fork's additional unit-data requirements
+> adopted as RetLab's own standard, with the fork's additional unit-data requirements
 > appended. When upstream revises their page, refresh this one.
 
 This checklist describes the work needed to add support for a new aircraft module in
@@ -37,7 +37,7 @@ P2 | Many modules don't complete these tasks. Completing these tasks is required
   2. Send PR to pydcs (the [dcs-retribution/pydcs](https://github.com/dcs-retribution/pydcs) fork)
   3. Update Retribution to the latest DCS
 - [ ] P0: Add unit data to `resources/units/aircraft`. See
-  [the F-16C data](https://github.com/BradySox/414Ret/blob/main/resources/units/aircraft/F-16C_50.yaml)
+  [the F-16C data](https://github.com/BradySox/RetLab/blob/main/resources/units/aircraft/F-16C_50.yaml)
   for a complete example.
   - [ ] P0: Price. Compare to similar aircraft to determine what the price should be.
   - [ ] P0: Variants. These are the names that will be used in the UI. At least one is
@@ -49,12 +49,12 @@ P2 | Many modules don't complete these tasks. Completing these tasks is required
   - [ ] P1: Information sections (`description`, `introduced`, `manufacturer`, `origin`,
     and `role`).
   - [ ] P1: Radio configuration. See
-    [radios.py](https://github.com/BradySox/414Ret/blob/main/game/radio/radios.py) for
+    [radios.py](https://github.com/BradySox/RetLab/blob/main/game/radio/radios.py) for
     a list of known radio types. Add new radios to that list if necessary. Necessary for
     default channel assignments and non-conflicting intra-flight frequency assignments.
-  - [ ] P2: [Fuel consumption data](https://github.com/BradySox/414Ret/blob/main/docs/modding/fuel-consumption-measurement.md).
+  - [ ] P2: [Fuel consumption data](https://github.com/BradySox/RetLab/blob/main/docs/modding/fuel-consumption-measurement.md).
     Without this the kneeboard will not show minimum required fuel for each waypoint,
-    and bingo/joker estimates may be extremely inaccurate. (**414th:** treat as P1 —
+    and bingo/joker estimates may be extremely inaccurate. (**RetLab:** treat as P1 —
     see below.)
 - [ ] P0: Flight planner priority lists. In the aircraft's
   `resources/units/aircraft/<id>.yaml` file under the `tasks` key, mapping each task
@@ -62,7 +62,7 @@ P2 | Many modules don't complete these tasks. Completing these tasks is required
   prefers aircraft with the larger weight for a given task (e.g. an F-22 outranks an
   F-16 outranks a FW-190 for a fighter task). Omitting a task means the aircraft cannot
   fly it. Valid task-name strings are the `FlightType` values in
-  [flighttype.py](https://github.com/BradySox/414Ret/blob/main/game/ato/flighttype.py)
+  [flighttype.py](https://github.com/BradySox/RetLab/blob/main/game/ato/flighttype.py)
   — the ones commonly weighted per aircraft are: `Anti-ship`, `BAI`, `BARCAP`, `CAS`,
   `DEAD`, `Escort`, `Fighter sweep`, `Intercept`, `OCA/Aircraft`, `OCA/Runway`, `SEAD`,
   `SEAD Escort`, `Strike`, `TARCAP` (plus support tasks like `AEW&C`, `Refueling`,
@@ -76,7 +76,7 @@ P2 | Many modules don't complete these tasks. Completing these tasks is required
 - [ ] P1: Banners/icons. Place banners in `resources/ui/units/aircrafts/banners/`
   (720x360 JPEG) and icons in `resources/ui/units/aircrafts/icons/` (91x24 JPEG).
 
-## 414th additions
+## RetLab additions
 
 The fork holds unit data to a few standards beyond the upstream checklist — each learned
 from a flown failure:
@@ -90,7 +90,7 @@ from a flown failure:
   traced to one). Load a campaign fielding the aircraft headlessly and count the
   squadrons before shipping.
 - [ ] P1: **Task priorities per the rebalance rubric.** Don't guess weights — follow
-  [`docs/dev/design/414th-aircraft-task-rebalance-rubric.md`](https://github.com/BradySox/414Ret/blob/main/docs/dev/design/414th-aircraft-task-rebalance-rubric.md).
+  [`docs/dev/design/retlab-aircraft-task-rebalance-rubric.md`](https://github.com/BradySox/RetLab/blob/main/docs/dev/design/retlab-aircraft-task-rebalance-rubric.md).
   Watch task *aliases* too: an `air-to-ground` secondary includes DEAD/SEAD, which has
   fragged the wrong airframes at SAM rings (the Bombcat lesson).
 - [ ] P1: **Recon and special classes.** Recon-capable airframes get a `TARPS` task
@@ -117,7 +117,7 @@ from a flown failure:
 
 > **Adopted standard (2026-07-20).** This page is the upstream
 > [New terrain module checklist](https://github.com/dcs-retribution/dcs-retribution/wiki/New-terrain-module-checklist),
-> adopted as the 414th's own standard, with the fork's additions appended. When upstream
+> adopted as RetLab's own standard, with the fork's additions appended. When upstream
 > revises their page, refresh this one.
 
 This checklist describes the work needed to add support for a new terrain module in
@@ -178,7 +178,7 @@ Copy the source rather than the rendered view to preserve formatting in the bug.
        `resources/theaters/<name>/landmap.p`, otherwise it will never be loaded. Prefer
        Option 2, which places the file correctly.
 
-## 414th additions
+## RetLab additions
 
 - [ ] **Campaigns on the new terrain author real corridors.** When the first campaign
   comes to the terrain, its `supply_routes:` must trace the real driveable roads —

@@ -1,10 +1,10 @@
--- luacheck configuration for the 414th DCS Lua plugins.
+-- luacheck configuration for RetLab DCS Lua plugins.
 --
 -- Target runtime is DCS World's Lua 5.1 (LuaJIT) server sandbox. This config
 -- powers the *advisory* luacheck job in .github/workflows/lua-lint.yml. The
 -- BLOCKING gate in that workflow is `luac5.1 -p` (pure syntax) over every
 -- plugin file; luacheck adds typo / undefined-global detection on top, scoped
--- to the 414th-authored scripts only (vendored MOOSE/CTLD/Skynet/etc. would
+-- to the RetLab-authored scripts only (vendored MOOSE/CTLD/Skynet/etc. would
 -- drown the signal). Tune the ignore list as real warnings surface — keep it
 -- low-noise so the output stays trusted rather than reflexively skipped.
 
@@ -53,6 +53,6 @@ read_globals = {
     "DETECTION_AREAS", "FLIGHTCONTROL", "AI_A2A_DISPATCHER", "DESIGNATE",
     "SETTINGS", "TARS", "Ops", "UTILS", "routines", "mist",
 
-    -- Plugin-defined globals the 414th init scripts probe before using
+    -- Plugin-defined globals RetLab init scripts probe before using
     "GLSCO", "GLSCO_COMBATANT", "GLSCO_BATTLEFIELD",
 }

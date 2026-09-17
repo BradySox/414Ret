@@ -1,9 +1,9 @@
-"""Locks the 414th merge invariant for PR #823's frontline maneuver: when the
+"""Locks RetLab merge invariant for PR #823's frontline maneuver: when the
 TIC plugin is enabled (the fork default), TIC owns frontline movement and the
 imported #823 DCS-task maneuver must NOT run for any role. When TIC is off, the
 #823 cohesive maneuver drives the groups instead.
 
-See docs/dev/design/414th-pr823-frontline-merge-notes.md (Bucket C).
+See docs/dev/design/retlab-pr823-frontline-merge-notes.md (Bucket C).
 """
 
 from unittest.mock import MagicMock

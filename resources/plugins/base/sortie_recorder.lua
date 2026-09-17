@@ -1,5 +1,5 @@
 -- Records what each aircraft actually did, into state.json's sortie_records.
--- See docs/dev/design/414th-retribution-long-view.md seam 1.
+-- See docs/dev/design/retlab-retribution-long-view.md seam 1.
 --
 -- Vanilla DCS only. Tacview is a paid third-party program, so nothing here may
 -- depend on it or its .acmi export.
@@ -381,7 +381,7 @@ end
 
 -- S_EVENT_KILL is the only event that names a KILLER; every other loss channel in
 -- this file records the victim, which is why the campaign has never been able to
--- say who shot anything down. See docs/dev/414th-features.md section 96.
+-- say who shot anything down. See docs/dev/retlab-features.md section 96.
 --
 -- Credited only when both coalitions resolve AND differ. A blue-on-blue is not an
 -- air kill, and a neutral or unresolvable target is left uncredited rather than

@@ -1,7 +1,7 @@
 ---
 name: Persian Gulf - Scenic Route Merged
 theater: Persian Gulf
-authors: Fuzzle, merged by tmz42, 414th cleanup pass
+authors: Fuzzle, merged by tmz42, RetLab cleanup pass
 description: <p>A merge of the two Scenic Route campaigns. <p><strong>Backstory:</strong> Iran has declared war on all US forces in the Gulf resulting in all local allies withdrawing their support for American troops. A carrier group, aided by USAF units stationed on the south bank must pacify Iran's coastal defences and push inland. Iran has assembled the full might of its air and ground divisions to defend their heartland.</p><p>Tuned for the <strong>[CH] Iran 2020</strong> faction (Shahed-136 drone barrages, IRGCN fast attack craft, Tor point defense) &mdash; install the CurrentHill Iran asset pack and enable it on the New Game Mods page for the full experience; without it the faction gracefully loses the CH units.</p>
 version: "10.7"
 advanced_iads: true
@@ -12,7 +12,7 @@ performance: 3
 recommended_start_date: 2020-06-29
 recommended_player_money: 2000
 recommended_enemy_money: 1000
-# 414th cleanup 2026-07-17: red income 0.7 -> 0.9 and blue 1.5 -> 1.3 -- the flown
+# RetLab cleanup 2026-07-17: red income 0.7 -> 0.9 and blue 1.5 -> 1.3 -- the flown
 # AI test ran ~25:4 blue in the air; nudge toward parity without repricing the start.
 recommended_player_income_multiplier: 1.3
 recommended_enemy_income_multiplier: 0.9
@@ -28,7 +28,7 @@ settings:
   ea6b_prowler: true
 squadrons:
   #BLUFOR CVN
-  # 414th cleanup 2026-07-17: the deck was carrying two air wings' worth of jets
+  # RetLab cleanup 2026-07-17: the deck was carrying two air wings' worth of jets
   # (58 owned airframes on one CVN). The flown AI test showed the consequences --
   # delayed SEAD/DEAD packages activated onto a gridlocked deck, never taxied,
   # and were despawned by DCS's stuck-AI cleanup (the mission silently lost both
@@ -114,7 +114,7 @@ squadrons:
       #USAF F-15C 
   # Al-Minhab AFB
   12:
-    # Thunderbolts F/A-18C -- moved ashore from the CVN (414th deck-capacity
+    # Thunderbolts F/A-18C -- moved ashore from the CVN (RetLab deck-capacity
     # cleanup; see the Naval-3 note).
     - primary: DEAD
       secondary: any
@@ -171,7 +171,7 @@ squadrons:
         #US Army Apache AH-64D
       size: 4
 ### OPFOR
-  # 414th cleanup 2026-07-17: red support air consolidated -- the campaign
+  # RetLab cleanup 2026-07-17: red support air consolidated -- the campaign
   # fielded THREE A-50 squadrons (5 airframes) and two IL-78M tanker squadrons;
   # one of each (at Shiraz) is plenty and the rest were dead weight. Iranian
   # Tomcats swapped to the Block 95-GR Export -- the actual IRIAF variant, whose
@@ -390,7 +390,7 @@ supply_routes:
       - [-143805, -139457]
       - [-127534, -115980]
       - [-126014, -89133]
-  # NOTE (414th, 2026-07-17): do NOT add direct Bandar Abbas <-> Shiraz/Kerman
+  # NOTE (RetLab, 2026-07-17): do NOT add direct Bandar Abbas <-> Shiraz/Kerman
   # yaml corridors here. The miz's own FOB-ladder roads already carry that
   # traffic on the real winding highways; the Noisy Cricket corridor traces are
   # only 4-5 waypoints (straight lines across the Zagros on the map), and a

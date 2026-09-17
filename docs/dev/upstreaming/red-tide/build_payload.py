@@ -3,7 +3,7 @@
 Builds docs/dev/upstreaming/red-tide/payload/ from the fork's shipped campaign:
 
 - red_tide.yaml     -- fork yaml with the fork-only YAML supply_routes/shipping_lanes
-                       removed (baked into the miz instead), the four 414th-identity
+                       removed (baked into the miz instead), the four squadron-identity
                        squadron names swapped for existing upstream squadron defs,
                        the transport re-typed to the vanilla C-130, and the enemy
                        faction re-pointed at the new Russia 1988.
@@ -41,11 +41,11 @@ HERE = Path(__file__).resolve().parent
 PAYLOAD = HERE / "payload"
 UPSTREAM_BASE = "dce851ea"
 
+# The fork's copy now names upstream presets directly for the Viper, Hornet and
+# Huey slots, so only the F-15E squadron still needs swapping -- upstream has no
+# 414th TFS def.
 SQUADRON_SWAPS = {
-    "414th Voodoo Squadron": "23rd FS",
-    "414th JFG Hornets": "VMFA-251",
     "414th Tactical Fighter Squadron": "336th Fighter Squadron",
-    "414th Aviation Detachment": "HMLA-269 (UH-1H)",
 }
 
 BLUE_TYPES_USED = [
@@ -95,13 +95,7 @@ def upstream_has(path: str) -> bool:
 # --------------------------------------------------------------------------- yaml
 def build_yaml(fork_yaml: str) -> str:
     text = fork_yaml
-    # Identity: the upstream copy is the public campaign; the fork keeps its own.
-    text = text.replace(
-        "NATO is going over to the attack, and the 414th Joint Fighter Group leads it --\n"
-        "  American Eagles, Tomcats and Phantoms wing-to-wing with the Luftwaffe's own JG 74 'Moelders' --",
-        "NATO is going over to the attack -- American Eagles, Tomcats and Phantoms\n"
-        "  wing-to-wing with the Luftwaffe's own JG 74 'Moelders' --",
-    )
+    # The fork's own description no longer names the fork, so nothing to neutralise.
     text = text.replace(
         "recommended_enemy_faction: Russia 1980",
         "recommended_enemy_faction: Russia 1988",
@@ -123,10 +117,11 @@ def build_yaml(fork_yaml: str) -> str:
         + text[end:]
     )
     assert "supply_routes" not in text and "shipping_lanes" not in text
-    # Only the authors-credit line may still say 414th; no squadron identity remains.
+    # Only the authors-credit line may still say RetLab; no squadron identity remains.
     for leftover in SQUADRON_SWAPS:
         assert leftover not in text, leftover
     assert "Joint Fighter Group" not in text
+    assert text.count("RetLab") == 1, text.count("RetLab")
     return text
 
 
@@ -468,7 +463,7 @@ def main() -> None:
     ported = collect_squadron_defs(fork_data)
     for path in ported:
         # Drop the fork branding from filenames (contents are already historical).
-        dst = PAYLOAD / path.parent / path.name.replace("414th ", "")
+        dst = PAYLOAD / path.parent / path.name.replace("RetLab ", "")
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(REPO / path, dst)
         # The fork consolidated transports onto the (mod) C-130J-30; upstream

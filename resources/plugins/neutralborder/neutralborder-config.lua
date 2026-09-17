@@ -3,7 +3,7 @@
 --
 -- Reads dcsRetribution.neutralBorder (emitted only when neutral_border_defense is on and the
 -- generator could build the map's zones; inert otherwise). Design + decisions:
--- docs/dev/design/414th-neutral-border-defense-notes.md. Constraints a reader could undo:
+-- docs/dev/design/retlab-neutral-border-defense-notes.md. Constraints a reader could undo:
 --   * A country stands SEVERAL batteries, one per stretch of war-facing frontier. One site
 --     covered 3.5 % of Pakistan's border on the Afghanistan map, so the whole zone escalates
 --     together -- never just the site the intruder happens to be near.

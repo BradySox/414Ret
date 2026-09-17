@@ -10,10 +10,10 @@ groups:
         - RLS_19J6
     - name: Track Radar
       unit_count:
-        - 1 # 414th: single-radar battalion (regiment-modeled, §60 reverted per SAM-belt STANDARD)
+        - 1 # RetLab: single-radar battalion (regiment-modeled, §60 reverted per SAM-belt STANDARD)
       unit_types:
         - RPC_5N62V
-    # 414th: no battalion-level P-19/P-14 -- acquisition/early warning serve the
+    # RetLab: no battalion-level P-19/P-14 -- acquisition/early warning serve the
     # regiment (the hub's shared EWR site), not each fire unit
     - name: Launcher
       unit_count:
@@ -30,7 +30,7 @@ groups:
         - Ural-375
         - Ural-4320-31
         - Ural-4320T
-    # 414th: the battery's refuelling section, now its own slot so a site
+    # RetLab: the battery's refuelling section, now its own slot so a site
     # fields trucks AND a bowser (the S-300 spread). fill:false -- the family
     # preset carries the era-correct bowsers; the 1960s trio is safe for every
     # campaign that fields these legacy SAMs.

@@ -165,7 +165,7 @@ class PackageFulfiller:
         corridor the flight sweeps, which always warrants an overwatch pass, so a
         recon bird rides along to scout the area (on a drone-fielding faction the
         auto-assignable TARPS squadron IS the drone, so this frags a drone into each
-        armed recon package — the 414th call). Crucially this never scrubs the
+        armed recon package — RetLab call). Crucially this never scrubs the
         mission: if no TARPS-capable squadron is in range the recon flight is simply
         omitted. The flight's +2 min TOT offset comes from ``TarpsFlightPlan`` (tight
         on purpose so it ingresses under the package's escort window rather than
@@ -182,7 +182,7 @@ class PackageFulfiller:
         # banks nothing. Same contract as a missing squadron: the optional
         # flight is omitted, the package is never scrubbed. Player-planned
         # recon flights are unaffected (this is only the automatic add-on).
-        from game.fourteenth.weather_planning import recon_suppressed
+        from game.retlab.weather_planning import recon_suppressed
 
         if recon_suppressed(self.coalition.game):
             logging.debug(
@@ -249,7 +249,7 @@ class PackageFulfiller:
                 # (Growler): same trigger as SEAD, pruned independently when no
                 # ESCORT_JAMMER-capable squadron exists.
                 threats[EscortType.Jammer] = True
-        # 414th: under doctrines that always escort strikes (Vietnam), a STRIKE-led
+        # RetLab: under doctrines that always escort strikes (Vietnam), a STRIKE-led
         # package pulls a fighter escort even when no air threat is detected on the
         # route -- the sparse, unpredictable MiG presence still warrants cover and the
         # bombers are the most exposed asset. Still gated downstream by can_plan_escort

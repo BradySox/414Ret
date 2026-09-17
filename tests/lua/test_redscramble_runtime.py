@@ -106,7 +106,7 @@ def test_host_name_gates_the_menu_to_that_players_group() -> None:
 
 
 def test_fragment_matches_the_changing_prefix_name_convention() -> None:
-    # The 414th convention: "<flight> 1-x | Flash" -- the prefix changes every
+    # RetLab convention: "<flight> 1-x | Flash" -- the prefix changes every
     # event, the tag is static. hostPlayers is a plain substring match, so
     # configuring the tag alone gates the menu whatever the prefix (and the
     # pattern-magic "|"/"-" in the name must not break the match).

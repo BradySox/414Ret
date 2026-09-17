@@ -154,10 +154,10 @@ class MizCampaignLoader:
     def control_point_from_airport(
         self, airport: Airport, ctld_zones: List[Tuple[Point, float]]
     ) -> ControlPoint:
-        # 414th DIVERGENCE from upstream (do NOT let a sync reintroduce the
+        # RetLab DIVERGENCE from upstream (do NOT let a sync reintroduce the
         # dynamic_spawn -> NEUTRAL branch): upstream reads an airfield's
         # dynamic-spawn flag as an ownership declaration (dynamic-spawn ==
-        # neutral airbase). The 414th uses DCS dynamic slots as a red/blue
+        # neutral airbase). RetLab uses DCS dynamic slots as a red/blue
         # gameplay feature, so a dynamic-spawn field must keep the coalition
         # its .miz declares. The 2026-07-16 upstream sync's inference silently
         # flipped 28 authored RED airfields to NEUTRAL across 13 campaigns
@@ -229,7 +229,7 @@ class MizCampaignLoader:
             if group.units[0].type == self.NEUTRAL_FOB_UNIT_TYPE:
                 yield group
 
-    # 414th marker-block convention: EVERY object class below reads BOTH CJTF
+    # RetLab marker-block convention: EVERY object class below reads BOTH CJTF
     # country blocks -- which block a group was authored in never decides
     # whether it generates. Single-block readers silently dropped authored
     # objects (22 blue-block markers across 7 campaigns until 2026-07-12; 3
@@ -563,7 +563,7 @@ class MizCampaignLoader:
         control point to itself. The self-entry inflates `connected_points`, and asking
         the transit network to path a base to itself returns an EMPTY path, which
         `PendingTransfers.arrange_transport` indexes unguarded -- so any consumer that
-        picks the pair kills the turn pass (docs/dev/414th-features.md §50). Warn and
+        picks the pair kills the turn pass (docs/dev/retlab-features.md §50). Warn and
         skip, the same treatment the yaml paths already give a sub-two-waypoint route.
         """
         if origin is not destination:
@@ -673,7 +673,7 @@ class MizCampaignLoader:
     # A zoned CP adopts a marker outside its zone when the marker is within the
     # first distance AND the unzoned fallback would strand it past the second.
     # Both bounds are load-bearing and each has a test that fails without it;
-    # the measurements are in 414th-features.md under Motorpool placement.
+    # the measurements are in retlab-features.md under Motorpool placement.
     # Set ADOPT_ZONED_WITHIN to None for the pre-2026-08-22 fallback.
     ADOPT_ZONED_WITHIN: Optional[Distance] = meters(25000)
     STRANDED_BEYOND: Distance = meters(50000)
@@ -743,7 +743,7 @@ class MizCampaignLoader:
         # A blue-block MARKER (SAM/EWR/missile/coastal/ship/offshore -- callers
         # that pass prefer_blue) binds the nearest BLUE control point when one
         # is reasonably close, not merely the nearest of either side (found via
-        # Red Tide's "414th Red EWR 1", where nearest-any binding handed one
+        # Red Tide's "RetLab Red EWR 1", where nearest-any binding handed one
         # side's marker to the other and the objective silently never
         # generated). The preference is scoped to those marker classes and
         # bounded by BLUE_BLOCK_MAX_DETOUR: the blue block also holds the

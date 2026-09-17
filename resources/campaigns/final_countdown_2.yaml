@@ -43,7 +43,7 @@ squadrons:
         - A-6E Intruder
       size: 8
     # Upstream fields this squadron on BAI; the Viking is sea-control only here
-    # and the A-6 owns carrier tanking (see tests/fourteenth/test_s3b_viking_sea_control.py).
+    # and the A-6 owns carrier tanking (see tests/retlab/test_s3b_viking_sea_control.py).
     - primary: Anti-ship
       secondary: air-to-ground
       aircraft:

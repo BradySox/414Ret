@@ -1,4 +1,4 @@
-"""Role callsigns for the 414th EW and rescue packages.
+"""Role callsigns for RetLab EW and rescue packages.
 
 The EW C-130 is "Toxic" and the rescue escort is "Sandy". It defaults a fresh flight's callsign and is offered in
 the existing per-flight callsign picker. It is not a stock DCS callsign, so

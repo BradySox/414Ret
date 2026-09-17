@@ -14,7 +14,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-CHECKLIST = Path("docs/dev/414th-ingame-pass-checklist.md")
+CHECKLIST = Path("docs/dev/retlab-ingame-pass-checklist.md")
 WATCH = Path("docs/dev/flycards/WATCH.md")
 LOCAL = Path("docs/dev/flycards/LOCAL.md")
 

@@ -1,7 +1,7 @@
 # Custom Campaigns
 
 A campaign tells Retribution where the war is fought, who starts with what, and which
-side you play. This page explains how campaigns are defined in 414Ret, how to author or
+side you play. This page explains how campaigns are defined in RetLab, how to author or
 import one, and walks through the fork's **Germany - Red Tide** campaign as a worked
 example.
 
@@ -18,7 +18,7 @@ Retribution loads the `.miz` through its `MizCampaignLoader`, reading control po
 objectives directly from the mission rather than the Mission Editor's scripting. You edit
 the theater in the **DCS Mission Editor**; you edit metadata and balance in the YAML.
 
-> Note: the upstream **Pretense** generator is **not** shipped in this fork — 414Ret runs
+> Note: the upstream **Pretense** generator is **not** shipped in this fork — RetLab runs
 > only the standard YAML-plus-`.miz` campaign path. Don't look for Pretense settings or
 > campaign files here.
 
@@ -31,7 +31,7 @@ the marker in is part of the convention, and getting it wrong is the single most
 authoring mistake, because a mis-blocked marker is **ignored silently** — no warning, no
 error, the objective simply never exists.
 
-This mirrors upstream's *Unit Type Quick Reference*; the **414th:** note below records
+This mirrors upstream's *Unit Type Quick Reference*; the **RetLab:** note below records
 where this fork differs.
 
 | Objective | Block | Marker unit |
@@ -60,7 +60,7 @@ For the last two rows the block is not a convention but the **declaration of who
 owning it** — a CJTF Blue carrier is blue's, a CJTF Red FOB is red's. Everywhere else the
 owner comes from proximity to the nearest control point, not from the block.
 
-> **414th:** this fork's `MizCampaignLoader` reads **both** country blocks for **every**
+> **RetLab:** this fork's `MizCampaignLoader` reads **both** country blocks for **every**
 > class, so a mis-blocked marker that upstream ignores **will** generate here. That is a
 > deliberate deviation (it also rescues genuinely mis-blocked authored content), but it
 > cuts both ways: authoring mistakes become live objectives instead of staying inert.
@@ -75,7 +75,7 @@ owner comes from proximity to the nearest control point, not from the block.
 ```yaml
 name: Germany - Red Tide
 theater: GermanyCW
-authors: Starfire, 414th JFG
+authors: Starfire, RetLab
 recommended_player_faction: Blufor Late Cold War (80s)
 recommended_enemy_faction: Russia 1980
 description: <p>...campaign briefing HTML...</p>
@@ -203,7 +203,7 @@ more) lives in `resources/campaigns/` — read those `.yaml` files as worked exa
 
 ## Worked example: Germany - Red Tide
 
-`red_tide.yaml` + `red_tide.miz` is the 414th's *Red Storm Rising*-flavoured 1988 NATO
+`red_tide.yaml` + `red_tide.miz` is RetLab's *Red Storm Rising*-flavoured 1988 NATO
 counteroffensive on the **GermanyCW** terrain. It is a **fork of Crossing the Rubicon**,
 left as a separate selectable campaign so the original is untouched.
 
@@ -220,15 +220,15 @@ What it demonstrates:
 - **YAML supply routes** instead of baked front-line groups, re-anchored on exact control
   point coordinates.
 - **Named, liveried squadrons.** Every squadron references a predefined squadron def, so
-  real GSFG/VVS regiments fly Soviet liveries on the red side and 414th identities (VMF-29,
-  Voodoo, the 414th TFS, JFG Hornets) fly on the blue side — no mismatched paint.
+  real GSFG/VVS regiments fly Soviet liveries on the red side and real USAFE/USN/USMC units
+  (VMF-29, 23rd FS, the 414th TFS, VMFA-251) fly on the blue side — no mismatched paint.
 
 The full build log, including the `.miz` edit points and gotchas, is in
-`docs/dev/design/414th-red-tide-campaign-notes.md`.
+`docs/dev/design/retlab-red-tide-campaign-notes.md`.
 
 ## Worked example: 1968 Yankee Station
 
-`1968_Yankee_Station.yaml` + `1968_Yankee_Station.miz` is the 414th's Vietnam campaign on the
+`1968_Yankee_Station.yaml` + `1968_Yankee_Station.miz` is RetLab's Vietnam campaign on the
 **Caucasus** terrain — the whole in-country air war on one map: the coastal route packages, the
 Ho Chi Minh Trail interdiction, and the DMZ siege. Where Red Tide is Tom Clancy flavour, this one
 is rooted in the real 1968 war. It demonstrates a different toolbox:
@@ -251,8 +251,8 @@ is rooted in the real 1968 war. It demonstrates a different toolbox:
   political-will economy and a Rolling Thunder → Linebacker II ROE arc; both were removed
   on 2026-07-21 — see [Removed](#removed-phases-roe-zones-and-political-will) above.)
 
-Design log: `docs/dev/design/414th-vietnam-retribution-notes.md` (framing) +
-`docs/dev/design/414th-vietnam-ops-notes.md` (the mechanics). See also
+Design log: `docs/dev/design/retlab-vietnam-retribution-notes.md` (framing) +
+`docs/dev/design/retlab-vietnam-ops-notes.md` (the mechanics). See also
 **[Vietnam Ops](Vietnam-Ops)** and **[Vietnam Ops](Vietnam-Ops)**.
 
 ## Worked example: Operation Enduring Resolve (COIN)
@@ -270,7 +270,7 @@ describes, used in anger:
 - **`settings:` preseeds** for the whole COIN stack plus the carrier pair
   (`long_range_carrier_ops` + `max_mission_range_planes: 600`).
 
-Design logs: `docs/dev/design/414th-coin-*.md`.
+Design logs: `docs/dev/design/retlab-coin-*.md`.
 
 ## See also
 

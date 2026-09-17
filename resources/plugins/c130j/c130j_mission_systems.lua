@@ -10,7 +10,7 @@ ISR: Altitude-gated radar detection, up to 3 simultaneous ELINT tracks with prog
 COORD: EW/ISR handoff brief deliverable to any selected friendly group.
 
 Original EW script by Timberwolf, C-130 conversion by claude and Flash.
-ISR conversion and merge by bradyccox.
+ISR conversion and merge by BradySox.
 --]]
 
 -- ===========================================================================
@@ -245,7 +245,7 @@ end
 
 local eligibleTypeNames = { ["C-130J-30"] = true }
 
--- 414th EW de-confliction: the generator emits dcsRetribution.EwExcludedGroups -- the
+-- RetLab EW de-confliction: the generator emits dcsRetribution.EwExcludedGroups -- the
 -- group names of C-130J-30 flights flying a NON-EW role (SOF insert, Combat SAR "King")
 -- that must fly clean and must NOT have the EW/ISR systems bolted on by airframe. Build a
 -- name->true lookup once (the dcsRetribution data trigger runs before this plugin loads;
@@ -1671,7 +1671,7 @@ local function refreshSpotTargetList(name, gid, tsMenu)
                         end
                         ewSettings[name] = ewSettings[name] or {}
                         ewSettings[name].spotTarget = gname
-                        -- 414th: pin the NATO type the player SELECTED (the important radar the
+                        -- RetLab: pin the NATO type the player SELECTED (the important radar the
                         -- menu labelled) so the tick's jam difficulty/duration + the coalition
                         -- broadcast can't drift to the group's first alive unit -- often the
                         -- acquisition radar, e.g. you pick "SA-10" but it jams/reports "DE" (Dog Ear).

@@ -314,7 +314,7 @@ def test_sidc_entity_override_repoints_the_map_symbol(
     Guards the real serialization path (``sidc_for`` -> the SIDC string sent to the
     client) against a regression in the shipped ``coin.py`` symbol constants.
     """
-    from game.fourteenth.coin import CELL_SIDC, HVT_SIDC, IED_SIDC
+    from game.retlab.coin import CELL_SIDC, HVT_SIDC, IED_SIDC
 
     # The SIDC string is positional: symbol set at [4:6], entity at [10:16].
     tgo = _vehicle_group_tgo(monkeypatch)
@@ -358,7 +358,7 @@ def test_sidc_identity_suspect_until_reconned(
     override, coin_insurgency on) the player hasn't discovered reads as SUSPECT
     (identity digit 5), flipping to HOSTILE (6) once reconned. Ground truth
     (viewer=None, the AI/planner) is never fogged. Identity digit is at SIDC[3:4]."""
-    from game.fourteenth.coin import CELL_SIDC
+    from game.retlab.coin import CELL_SIDC
 
     tgo = _vehicle_group_tgo(monkeypatch)
     settings = SimpleNamespace(coin_insurgency=True)

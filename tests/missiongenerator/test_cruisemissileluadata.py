@@ -12,7 +12,7 @@ import math
 from types import SimpleNamespace
 from typing import Any
 
-from game.fourteenth.cruise_raids import LACM_MAGAZINE_BY_TYPE
+from game.retlab.cruise_raids import LACM_MAGAZINE_BY_TYPE
 from game.missiongenerator.cruisemissileluadata import populate_cruise_missiles_lua
 from game.missiongenerator.luagenerator import LuaData, LuaValue
 from game.theater import Player

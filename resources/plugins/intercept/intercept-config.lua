@@ -1,6 +1,6 @@
 -- Intercept (QRA) — drives AI_A2A_DISPATCHER per coalition from
 -- dcsRetribution.Intercept. Rationale, the flown-test history and the tuning
--- record are in docs/dev/414th-features.md §1. The load-bearing parts:
+-- record are in docs/dev/retlab-features.md §1. The load-bearing parts:
 --
 --  * Never restore the per-base backstop EWR. DCS has no non-colliding ground
 --    unit, so the mast blocked AI taxi routing (flown Red Tide 2026-08-06;
@@ -50,7 +50,7 @@ local NM = 1852  -- metres per nautical mile
 local DETECTION_GROUPING_M = 30000  -- contact-clustering radius for DETECTION_AREAS
 local BUILD_DELAY = 5  -- seconds; let the mission's groups register before SET_GROUP
 
--- QRA scramble spawn profile (414th tuning, 2026-06-21).
+-- QRA scramble spawn profile (RetLab tuning, 2026-06-21).
 --   Speed: Moose's air-spawn (SpawnAtAirbase, Takeoff.Air) sets position + altitude
 --   but NOT speed, so the cloned parking template spawns at ~0 kt. The jets spawn
 --   stalled at altitude and dive ~4,600 ft clawing back airspeed — one Su-27 nearly
@@ -109,7 +109,7 @@ do
     end
 end
 
--- Build this coalition's defended-airspace zones (414th forward defense). Returns
+-- Build this coalition's defended-airspace zones (RetLab forward defense). Returns
 -- an empty list when the generator emitted none (feature off, or no dispatcher),
 -- in which case build_dispatcher skips SetBorderZone entirely.
 --
@@ -275,7 +275,7 @@ local function build_dispatcher(coalition_name, records)
     local comms_enabled = records[1].commsEnabled ~= "false"
     local scramble_radius_nm = tonumber(records[1].gciMaxRadiusNm) or 60
     local engagement_range_nm = tonumber(records[1].engagementRangeNm) or 38
-    -- Home-base disengage leash in NM (414th forward defense). 0/absent leaves
+    -- Home-base disengage leash in NM (RetLab forward defense). 0/absent leaves
     -- Moose's own 300 km default alone, which is what pre-feature saves emit.
     local disengage_radius_nm = tonumber(records[1].disengageRadiusNm) or 0
     -- GCI-ambush posture (Vietnam campaign layer W5). The generator already
@@ -484,7 +484,7 @@ local function refresh_survivors()
 end
 
 -- ---------------------------------------------------------------------------
--- Player-manned QRA scramble cue (414th, §1 player-manning)
+-- Player-manned QRA scramble cue (RetLab, §1 player-manning)
 -- For each base with a player alert flight (dcsRetribution.Intercept.PLAYER_ALERT),
 -- watch for hostile aircraft closing inside the cue radius and call the player to
 -- scramble. The cue fires a lead margin BEYOND the AI scramble (GCI) radius so a

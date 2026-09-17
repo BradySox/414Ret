@@ -1,4 +1,4 @@
-# Ranks and awards for the pilot logbook (414th feature 96).
+# Ranks and awards for the pilot logbook (RetLab feature 96).
 #
 # Data, not code. Retribution spans many air forces and seventy years, so a rank
 # ladder hard-coded to one service would be wrong for most campaigns. Add a
@@ -12,7 +12,7 @@
 #
 # Ranks and awards are RECORDS, not rewards. Nothing here unlocks an aircraft,
 # changes availability or gates a mission; that is the whole point of the
-# feature. See docs/dev/414th-features.md section 96.
+# feature. See docs/dev/retlab-features.md section 96.
 
 version: 1
 

@@ -1,6 +1,6 @@
 """Build resources/campaigns/coin_enduring_resolve.miz from operation_shattered_dagger.miz.
 
-The COIN campaign fork (C3 of docs/dev/design/414th-coin-insurgent-replenishment-notes.md,
+The COIN campaign fork (C3 of docs/dev/design/retlab-coin-insurgent-replenishment-notes.md,
 credit Starfire for the base laydown): Operation Shattered Dagger's miz, unchanged,
 plus the **ammo-cache TGO markers** the C1 regen engine throttles on -- a small ring
 of `Warehouse.Ammunition_depot` statics around every insurgent stronghold (the 11 red

@@ -14,7 +14,7 @@ is what a doctrine claim about planner behaviour has to be tested against.
 
 Prefer campaigns the fork did not author. Ours are tuned to fork features and
 are not representative; the campaign list carries `authors:` and the ones marked
-414th are the ones to avoid.
+RetLab are the ones to avoid.
 
 Copied in shape from `tools/system_probe.py`, which already did this.
 """

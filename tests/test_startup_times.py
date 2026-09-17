@@ -4,7 +4,7 @@
 cold-start. A Viper on a stored-heading alignment is ready in ~90 seconds; an F-4E cannot
 even begin aligning until its gyros reach 160 degrees. Upstream issue #214, open since 2023.
 
-Values and their sources are in docs/dev/design/414th-startup-times-notes.md. These tests
+Values and their sources are in docs/dev/design/retlab-startup-times-notes.md. These tests
 pin the plumbing and the invariants, not the numbers themselves -- a measured value is
 allowed to move.
 """
@@ -22,7 +22,7 @@ import yaml
 from game.ato.starttype import StartType
 
 AIRCRAFT = Path("resources/units/aircraft")
-NOTE = Path("docs/dev/design/414th-startup-times-notes.md")
+NOTE = Path("docs/dev/design/retlab-startup-times-notes.md")
 
 
 def _yamls_with_a_value() -> dict[str, int]:

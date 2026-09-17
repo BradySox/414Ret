@@ -77,7 +77,7 @@ class FlightType(Enum):
 
     @classmethod
     def _missing_(cls, value: object) -> FlightType | None:
-        """Remap legacy persisted values from older 414th builds.
+        """Remap legacy persisted values from older RetLab builds.
 
         The remap table (_LEGACY_FLIGHT_TYPE_VALUES, below the class) is THE
         single source of truth: both runtime enum lookups (``FlightType("ISR")``)
@@ -212,7 +212,7 @@ class FlightType(Enum):
         }.get(self, AirEntity.UNSPECIFIED)
 
 
-# Legacy persisted FlightType values from older 414th builds, remapped on load.
+# Legacy persisted FlightType values from older RetLab builds, remapped on load.
 # THE single source of truth for value renames: FlightType._missing_ (runtime
 # lookups) and persistency._handle_flight_type (the unpickler, via
 # FlightType(value)) both resolve through here. Add a "legacy value" -> live

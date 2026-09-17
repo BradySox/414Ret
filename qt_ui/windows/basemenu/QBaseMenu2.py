@@ -19,7 +19,7 @@ from game import Game
 from game.ato.flighttype import FlightType
 from game.config import RUNWAY_REPAIR_COST
 from game.dcs.aircrafttype import AircraftType
-from game.fourteenth.region_priorities import RegionPriority
+from game.retlab.region_priorities import RegionPriority
 from game.radio.ICLSContainer import ICLSContainer
 from game.radio.RadioFrequencyContainer import RadioFrequencyContainer
 from game.radio.TacanContainer import TacanContainer

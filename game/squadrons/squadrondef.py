@@ -40,7 +40,7 @@ class SquadronDef:
     #: flights default to it instead of a random DCS-pool callsign, and it is
     #: registered into the spawn country's pool so it shows on the F10 map,
     #: labels, kneeboard and briefing. The AI cannot voice a non-stock name (a
-    #: DCS engine limit), the same as the 414th role callsigns (King/Sandy/...).
+    #: DCS engine limit), the same as RetLab role callsigns (King/Sandy/...).
     callsign: Optional[str] = None
 
     def __str__(self) -> str:

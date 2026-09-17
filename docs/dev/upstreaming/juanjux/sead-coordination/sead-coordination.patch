@@ -166,7 +166,7 @@
 +        page=CAMPAIGN_DOCTRINE_PAGE,
 +        section=GENERAL_SECTION,
 +        # Stock default (2026-08-09 re-convergence): upstream times packages
-+        # independently. The 414th planner suite preset turns this on.
++        # independently. RetLab planner suite preset turns this on.
 +        default=False,
 +        detail=(
 +            "Packages used to be timed independently, so a strike could arrive "

@@ -118,7 +118,7 @@ local function opscsar_main()
     local hover_altitude = tonumber(cfg.hoverAltitudeMeters) or HOVER_ALTITUDE
     -- Survivors this close to the one being collected come out on the same lift.
     local cluster_radius = tonumber(cfg.clusterRadius) or 0
-    -- 414th: the ONE briefed survivor beacon channel for the whole mission, in Hz.
+    -- RetLab: the ONE briefed survivor beacon channel for the whole mission, in Hz.
     -- Stock Ops.CSAR draws a random channel per survivor from a large pool, which
     -- cannot be briefed -- the kneeboard is rendered before the mission runs, so the
     -- crew would have to wait for the MAYDAY to learn where to tune. Python pins one
@@ -182,14 +182,14 @@ local function opscsar_main()
             return nil
         end
         local my = CSAR:New(side_const, template, "CSAR")
-        -- 414th: MOOSE hardcodes radioSound = "beacon.ogg" (Moose.lua:78495) and
+        -- RetLab: MOOSE hardcodes radioSound = "beacon.ogg" (Moose.lua:78495) and
         -- transmits "l10n/DEFAULT/"..radioSound. That file ships with NOTHING -- it is
         -- not in this tree and no plugin packs it -- so stock Ops.CSAR keys a
         -- filename the mission does not contain and the survivor beacon is silent.
         -- Point it at the tone this plugin actually ships (see plugin.json's
         -- otherResourceFiles, which is what puts it in l10n/DEFAULT/).
         my.radioSound = "csar-beacon.wav"
-        -- 414th: a pilot who ejects in-mission is registered by MOOSE's own _AddCsar,
+        -- RetLab: a pilot who ejects in-mission is registered by MOOSE's own _AddCsar,
         -- which draws his channel from the random pool and never sees beacon_hz
         -- (test 33: two blue survivors on 620 and 820 kHz against a kneeboard
         -- briefing 260). Overriding the draw pins every survivor to the one channel.
@@ -283,7 +283,7 @@ local function opscsar_main()
             return false
         end
         local ok, err = pcall(function()
-            -- 414th: the pinned briefed channel, so every survivor keys the one
+            -- RetLab: the pinned briefed channel, so every survivor keys the one
             -- frequency the kneeboard carries. Falls back to MOOSE's random pool
             -- pick when Python did not pin one.
             local freq = beacon_hz

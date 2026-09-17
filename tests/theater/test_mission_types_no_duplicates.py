@@ -43,7 +43,7 @@ def test_mission_types_have_no_duplicates(
     target.is_friendly = MagicMock(return_value=friendly)
     target.total_aircraft_parking = MagicMock(return_value=1)
 
-    # 414th recon feature: TheaterGroundObject.mission_types() also consults the
+    # RetLab recon feature: TheaterGroundObject.mission_types() also consults the
     # warrants_recon property, whose building/IADS overrides read category/units
     # that the bare object (no __init__) lacks. Force it inert for the duplicate
     # check — it only gates TARPS, which is yielded at most once anyway. create=True

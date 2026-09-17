@@ -14,7 +14,7 @@ unguarded -- so any consumer that picks the pair raises ``IndexError`` from
 and Tiyas as convoy routes, operation_allied_sword's FOB Samandag and scenic_route /
 scenic_merge's Havadarya as shipping lanes; all four are stray single-point groups).
 
-See docs/dev/414th-features.md §50.
+See docs/dev/retlab-features.md §50.
 """
 
 from __future__ import annotations

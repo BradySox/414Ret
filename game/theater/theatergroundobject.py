@@ -22,7 +22,7 @@ from game.sidc import (
     SymbolIdentificationCode,
 )
 from game.theater.presetlocation import PresetLocation
-from game.fourteenth.region_priorities import RegionPriority
+from game.retlab.region_priorities import RegionPriority
 from .fogofwar import Visibility, viewer_sees_truth
 from .missiontarget import MissionTarget
 from .player import Player

@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
 )
 
 import qt_ui.uiconstants as CONST
-from game.fourteenth.region_priorities import (
+from game.retlab.region_priorities import (
     TARGET_FAMILIES,
     RegionPriority,
     family_priority,
@@ -58,7 +58,7 @@ class QTargetPrioritiesWindow(QDialog):
         if not game.settings.region_priorities:
             warning = QLabel(
                 "<b>Region priorities are off</b>, so nothing here reaches the "
-                "planner yet. Settings → 414th Features → Region priorities."
+                "planner yet. Settings → RetLab Features → Region priorities."
             )
             warning.setWordWrap(True)
             layout.addWidget(warning)
@@ -94,7 +94,7 @@ class QTargetPrioritiesWindow(QDialog):
 
     def enemy_target_counts(self) -> dict[str, int]:
         """Live enemy targets per family, so a priority is not set blind."""
-        from game.fourteenth.region_priorities import family_of
+        from game.retlab.region_priorities import family_of
 
         counts: dict[str, int] = {}
         for control_point in self.game.theater.controlpoints:

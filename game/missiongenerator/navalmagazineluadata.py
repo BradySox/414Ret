@@ -1,7 +1,7 @@
 """Cross-turn naval magazines -> Lua config bridge (``dcsRetribution.navalMagazines``).
 
 The §81 emitter. Python owns the campaign side (the persisted per-group
-anti-ship stock — ``game/fourteenth/naval_magazines``); this hands the
+anti-ship stock — ``game/retlab/naval_magazines``); this hands the
 ``navalmagazines`` plugin:
 
 * ``stagger`` — N1's weapons-release switch. When on, the generator has already
@@ -42,7 +42,7 @@ def populate_naval_magazines_lua(
     if not (stagger or metered):
         return
 
-    from game.fourteenth.naval_magazines import naval_group_magazines
+    from game.retlab.naval_magazines import naval_group_magazines
 
     groups = naval_group_magazines(game)
     if not groups:

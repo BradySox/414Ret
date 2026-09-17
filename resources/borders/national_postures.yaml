@@ -1,6 +1,6 @@
 # §98 national postures: dated overflight/alignment posture per country per bloc.
 #
-# Sources, reasoning and the open questions: docs/dev/design/414th-national-postures-notes.md.
+# Sources, reasoning and the open questions: docs/dev/design/retlab-national-postures-notes.md.
 # DRAFT — nothing reads this file yet. The wiring is its own change.
 #
 # Buckets, in order of consent. The test is overflight, not sympathy: would this

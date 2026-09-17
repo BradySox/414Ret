@@ -11,7 +11,7 @@ This resolves the waypoint against the tankers that exist in the generated .miz,
 at generation time, so the plan and the planner are untouched.
 
 Rationale and the flown evidence live in
-``docs/dev/414th-features.md`` §8.
+``docs/dev/retlab-features.md`` §8.
 """
 
 from __future__ import annotations

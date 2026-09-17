@@ -3,7 +3,7 @@
 Locks the doctrine *model* (display-name rename layer + tasking-whitelist mechanism,
 behaviour cloned from COLDWAR) and the faction repoint, so a regression that drops the
 renames, re-gates the whitelist, or unpoints a faction fails CI. See
-docs/dev/design/414th-vietnam-retribution-notes.md.
+docs/dev/design/retlab-vietnam-retribution-notes.md.
 """
 
 from __future__ import annotations

@@ -119,7 +119,7 @@ class TicStanceProfile:
     """Per-stance movement shape for a TIC-managed formation. Maps a campaign
     CombatStance onto a distinct firing-line posture so opposing sides don't run
     the same script and collide as a symmetric wall. See
-    docs/dev/design/414th-tic-dynamic-fronts-notes.md."""
+    docs/dev/design/retlab-tic-dynamic-fronts-notes.md."""
 
     # Distance band (m) to halt short of the trace for the opening bound.
     standoff: Tuple[int, int]
@@ -857,7 +857,7 @@ class FlotGenerator:
         waypoint names ("t+N" = advance N minutes after activation, "hdg=" =
         formation facing). TIC ignores DCS tasks/triggers, so none are added.
 
-        TIC runs the 414th's chosen "simulate" ROE: theatrical, mostly
+        TIC runs RetLab's chosen "simulate" ROE: theatrical, mostly
         inaccurate fire that only happens while stationary. Movement is shaped
         per CombatStance (`_tic_stance_profile`) so opposing sides don't run the
         same script and collide as a symmetric wall. Every formation takes an
@@ -867,7 +867,7 @@ class FlotGenerator:
         counterattacks. Cadence is staggered per group (`_tic_step_off`,
         `_tic_leg_gap`) so the line ripples instead of lurching. Leg pacing
         comes from the "tic.boundPause" plugin setting; players provide the real
-        attrition. See docs/dev/design/414th-tic-dynamic-fronts-notes.md.
+        attrition. See docs/dev/design/retlab-tic-dynamic-fronts-notes.md.
 
         Returns True if movement waypoints were added.
         """

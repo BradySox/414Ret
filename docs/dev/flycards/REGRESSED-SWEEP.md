@@ -53,7 +53,7 @@ Write each row's status the **same turn you fly it**, with the session id — re
 otherwise. `☑ VERIFIED` means "I watched for the fail signature and it did not occur", with a
 Tacview or log reference and a date.
 
-Rows live in [414th-ingame-pass-checklist.md](../414th-ingame-pass-checklist.md).
+Rows live in [retlab-ingame-pass-checklist.md](../retlab-ingame-pass-checklist.md).
 
 ## Free while you are in there
 

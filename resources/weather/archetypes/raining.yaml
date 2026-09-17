@@ -3,7 +3,7 @@ id: raining
 wind:
   speed:
     weibull:
-      # 414th: trimmed the upper-level scale_kts (was 2000m/8000m = 20/20). The generator
+      # RetLab: trimmed the upper-level scale_kts (was 2000m/8000m = 20/20). The generator
       # adds each layer's scale onto the layer below, so the old values put ~48 kt winds at
       # 8000m -- too strong for comfortable ops. See tests/test_wind_tuning.py.
       at_msl:

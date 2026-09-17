@@ -8,7 +8,7 @@ units:
   - SAM SA-21 S-400 TR 92N6E (truck)
   - SAM SA-21 S-400 LN 51P6A (48N6DM)
   - SAM SA-21 S-400 LN 51P6A (9M96E2)
-  # 414th: battery support section (cargo / fuel / power slots)
+  # RetLab: battery support section (cargo / fuel / power slots)
   - Truck GAZ-66
   - Truck KAMAZ 43101
   - Truck Ural-375

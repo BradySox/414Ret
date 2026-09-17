@@ -1,8 +1,8 @@
 """Save-load compat for the 2026-07-21 ROE / §40 / §55 and will / war-economy removals,
 plus the 2026-07-29 §77 escort-jamming tier removal.
 
-The modules ``game.fourteenth.{phases, red_intent, zone_drawings}`` were deleted in the ROE
-drop, and ``game.fourteenth.{political_will, commitment_ceiling, static_front, war_economy}``
+The modules ``game.retlab.{phases, red_intent, zone_drawings}`` were deleted in the ROE
+drop, and ``game.retlab.{political_will, commitment_ceiling, static_front, war_economy}``
 in the will / §53 / §54 economy drop. A pre-removal save pickled ``game.phase_baseline``
 (``campaign_phases`` was default ON, so nearly every in-progress save carries a
 ``PhaseBaseline``), ``red_intent_*`` state (``RedIntentBaseline`` / ``RedIntentSample`` /
@@ -94,11 +94,11 @@ def test_escort_jammer_tier_enum_degrades() -> None:
 
 
 def test_find_class_leaves_live_modules_alone() -> None:
-    from game.fourteenth.red_tempo import RedTempoWindow
+    from game.retlab.red_tempo import RedTempoWindow
 
     unpickler = MigrationUnpickler(io.BytesIO(b""))
-    # A surviving fourteenth module still resolves to its real class.
-    resolved = unpickler.find_class("game.fourteenth.red_tempo", "RedTempoWindow")
+    # A surviving retlab module still resolves to its real class.
+    resolved = unpickler.find_class("game.retlab.red_tempo", "RedTempoWindow")
     assert resolved is RedTempoWindow
 
 

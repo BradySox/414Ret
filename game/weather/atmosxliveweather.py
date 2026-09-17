@@ -11,7 +11,7 @@ Nothing here is allowed to stop a mission being generated. Every failure (no CLI
 network, an ICAO with no observation, a malformed file) logs and returns, leaving the
 weather Retribution had already generated.
 
-Adopted from upstream PR #927. See docs/dev/design/414th-atmosx-live-weather-notes.md
+Adopted from upstream PR #927. See docs/dev/design/retlab-atmosx-live-weather-notes.md
 for the three fork couplings this needed: the 47 weather ladder reads a LiveWeather by
 its archetype, `Conditions.advance` fetches too (or live weather would land on turn 1
 only), and 67's weather-aware planner falls back to the archetype as well.

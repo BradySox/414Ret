@@ -1369,7 +1369,8 @@ controls four behaviors together when set to Approximate:
 > git history if any of it is ever wanted again.
 >
 > **Removed:** front-anchored support-orbit placement and the AI depth asymmetry
-> (U29) · AWACS/tanker lateral orbit spreads (U30) · the red forward-middle BARCAP
+> (U29) · AWACS/tanker lateral orbit spreads (U30; AEW&C got a step-back spacing
+> instead on 2026-09-17, see the next section) · the red forward-middle BARCAP
 > layer (U17) · the front-anchor defense guarantee and the seeded per-CP
 > aggressiveness roll (U1) · threat-weighted BARCAP volume and orbit forward-bias
 > (U2, U37) · the FLOT navmesh hazard capsule and the `air_engagement` escort zone
@@ -1499,6 +1500,62 @@ Tests: `tests/test_objectivefinder_barcap.py`, `tests/test_barcap_threat_weighti
 > `supportorbit.py` is deleted. The failure modes recorded below are upstream's again —
 > they are real, and the tests that pinned them are gone, so treat this section as the
 > record of what upstream's placement does wrong rather than as current behavior.
+>
+> **2026-09-17 — AEW&C spacing and a land-only anchor, on a fresh DM call; U29 did not
+> come back.**
+> 1. **AEW&C on one station step back from the threat, ungated.** `aewc.py` is
+>    deterministic in its target, so two AWACS on one station flew the identical racetrack,
+>    and the revert left AEW&C with no spacing while the tanker got `TANKER_ORBIT_SPACING`.
+>    The August sideways spread was reviewed and **not** restored: with the target list
+>    deduped it only fires on a hand-fragged second AWACS, and there the first -- laid out
+>    alone, never again -- stayed put while the newcomer moved 30 NM, so two 60 NM tracks
+>    shared 30 NM of line; it also shifted with no threat check (8 of 101 track samples
+>    inside red's zone on `brady.retribution`) and shared a turn point. Each further AWACS
+>    now steps `AEWC_ORBIT_SPACING` (20 NM) back from the threat, the tanker's pattern,
+>    taking the nearest step clear of where the AWACS already on that station actually
+>    orbit (read from their existing plans, never built). A first version counted the
+>    AWACS ahead of it in ATO order; a second review showed that collides when an AWACS is
+>    added to an earlier package, or one is deleted and another fragged, because a plan
+>    already laid out never moves -- all three reproduced at 0.0 NM, now 20.0 NM. 20 NM, not the
+>    tanker's 15: an E-3A flew 13.8 km off its leg on test 36 and its drawn box is 15.6 NM
+>    wide. JAMMING shares the builder and never takes part. Probed on the real saves with
+>    the first AWACS left un-replanned: 0/101 samples inside the zone, tracks 20.0 NM apart,
+>    no shared turn point. Tests `tests/ato/flightplans/test_aewc_orbit_spread.py`.
+> 2. **The tanker's step goes the right way on a threatened anchor.** It always subtracted,
+>    which is "back" only when the anchor is clear; a threatened anchor's orbit sits past
+>    the zone edge, so subtracting walked each extra tanker back toward the zone. On
+>    `autosave.retribution` the second tanker went from 55 NM clear to 85 NM. Both builders
+>    now call `patrolling.step_back_from_threat`.
+> 3. **The land support anchor is land again (a bug fix, not U29).** Test 36's follow-up
+>    showed three overlapping support bands near CVN-71. With every blue field inside
+>    red's threat zone, `_support_hosting_anchor` returned None and both fallbacks --
+>    which filtered only off-map spawns -- handed back a ship: the "land" AWACS anchored
+>    on **LHA-1 Tarawa, 3.29 NM from CVN-71**, and the carrier's one E-2C squadron flew
+>    two racetracks 14.9 NM apart beside its own tanker. Three causes, three fixes in
+>    `objectivefinder.py`: `Lha` never overrides `is_carrier`, so the filter is now
+>    `is_fleet`; `distance_to_threat` is unsigned (inside the zone it is *depth*), so the
+>    old rear pick among threatened fields chose the one **deepest** in enemy airspace --
+>    now ranked in two tiers, unthreatened first, then shallowest; and a threatened host is
+>    taken **only when every land field is threatened**, so Incirlik's E-3A is no longer
+>    skipped on turn 1 while a clear field still wins whenever one exists. The target
+>    lists dedupe by identity, closing a latent path where the fallback returned a carrier
+>    already in the list (seen on `brady.retribution` turn 3, hidden only by the hosting
+>    walk finding Incirlik first). A wing with no land field gets no land anchor rather
+>    than a phantom one on its own boat.
+>    Replayed read-only on `autosave.retribution`: AEW&C `[CVN-71, LHA-1]` 3.29 NM apart
+>    → `[CVN-71, Incirlik]` 81.8 NM apart; the land tanker station Gaziantep, which hosts
+>    no tanker and sat 17.6 NM from the threat edge → Incirlik, which hosts the KC-135s.
+>    `brady.retribution` (nothing threatened) is unchanged. Tests
+>    `tests/test_aewc_targets.py`; in-game row B131.
+>    **Known gap, pre-existing and unchanged:** an off-map spawn is not a station, so a
+>    wing whose only land-side tanker lives off-map gets no theater tanker station
+>    (RetakeTheFalklands blue: the KC-135 at "From US" flies neither before nor after;
+>    before, the carrier was listed twice instead).
+>    **Known limitation of the step:** it moves along the line to the NEAREST zone edge
+>    only, so in built-up multi-lobe geometry a later slot can step into a second lobe.
+>    Reviewed 2026-09-17 and not acted on: it needs a station whose slot 0 already fails
+>    its own buffer, the planner never puts two AWACS on one station, and no real save
+>    reaches it.
 >
 > Two things did NOT come back: the theater-tanker demand reposition
 > (`game/commander/tankerdemand.py`, still overrides the anchor — see the next section)

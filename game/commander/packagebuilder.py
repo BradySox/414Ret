@@ -72,6 +72,14 @@ class PackageBuilder:
                 else target
             )
             heli = pf.is_helo
+            # pf.departure is for the escorts. A further tanker (U15) serves the
+            # station: ranked from the first tanker's field, it flew a KC-135 223 NM
+            # while one sat at the station (Vietnam tes, 2026-09-17).
+            if (
+                plan.task is FlightType.REFUELING
+                and pf.flight_type is FlightType.REFUELING
+            ):
+                target = self.package.target
         squadron = self.air_wing.best_squadron_for(
             target,
             plan.task,

@@ -256,7 +256,7 @@ no evidence either way after 33 missions.
 
 ## Outstanding rows at a glance
 
-81 rows need a live pass. Full detail is under each `###` heading below —
+82 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -370,7 +370,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B69 | The front bulges instead of running straight | §90 rung E | ☑ |
 | B70 | Sortie records reach the campaign | §91 | ◐ |
 | B75 | The ATO stops spending its escorts on the wrong packages | planner shape | ☑ |
-| B76 | A mixed boom/probe wing gets a tanker of each | U15 reinstated | ☑ |
+| B76 | A mixed boom/probe wing gets a tanker of each | U15 reinstated | ✗ |
 | B77 | A player's ramp allowance matches the airframe | #214 startup times | ☐ |
 | B78 | The escorts let go of a package the player is leading | planner shape | ☑ |
 | B79 | Ground-level waypoints read the field's elevation | §8 | ☑ |
@@ -6137,14 +6137,28 @@ turn on a wing with a small dedicated-jammer squadron and read the ATO before fl
   4. **SEAD cover feels thin.** Same trade as B52 — the answer is to reinstate the sweep for
      specific callers, not to ungate the trim.
 
-### B76 — A mixed boom/probe wing gets a tanker of each · U15 reinstated · ☑ VERIFIED
+### B76 — A mixed boom/probe wing gets a tanker of each · U15 reinstated · ✗ REGRESSED (2026-09-17, headless)
+
+**2026-09-17 — the fail signature, reproduced headless on two real saves.** Long Road to H3,
+`autosave` turn 1 and `brady` turn 3, blue replanned read-only through the full planner: the
+land station got **two boom KC-135s and no probe tanker**. The wing counts probe 8 / boom 3, so
+the methods list is `[probe, boom]`; the first tanker was unconstrained and took the best
+squadron (the boom KC-135), and the loop then proposed `needed[1:]` -- boom again. The KC-135
+MPRS was never asked for, leaving the Incirlik Mirage 2000Cs without a land tanker. **The
+08-21 VERIFIED below was a batch call and never exercised this**: the row's own history says it
+was never flown in either shape. Fixed on branch `claude/u15-probe-tanker` -- every tanker is
+constrained to one method, the first included; the type is the one the planner ranks best at
+the station; and a second tanker is ranked from the station, not the first tanker's field.
+Replayed on all 8 saves x both sides: the bug was live on 4 (every mixed wing with a land probe
+tanker), each now boom + probe, and nothing else changed. Needs this
+row re-run in-game to go back to VERIFIED.
 
 **History:** 2026-08-21, DM pass `sead-escort-waypoint-bug-548af6` — "all of these are good") (was ☐ UNTESTED, built 2026-06-26, reverted 2026-08-09 with the rest of work order B, reinstated 2026-08-17 on a fresh call in a different shape. Never flown in either shape.
-- **What it is:** the coalition's squadrons are counted by refuelling method; one theater tanker is proposed per method. The first is unconstrained (so nothing regresses when the data is missing), the rest are optional and constrained. Extra tankers step 15 NM further back from the threat so they do not share a racetrack.
+- **What it is:** the coalition's squadrons are counted by refuelling method; one theater tanker is proposed per method a land tanker can serve, every one constrained to its method (the first too, since 2026-09-17). The first is mandatory, the rest optional; when no method qualifies the single unconstrained pre-U15 tanker is proposed, so nothing regresses when the data is missing. Extra tankers step 15 NM further back from the threat so they do not share a racetrack.
 - **What CI cannot exercise:** whether the second tanker ends up somewhere a receiver can actually reach, and whether two orbits 15 NM apart read as separated in the cockpit and on the F10 map. The tests prove the proposals and the slot arithmetic, nothing about the geometry being flyable.
 - **Setup:** a campaign whose blue wing flies **both** boom and probe receivers and owns a tanker for each — a mixed USAF/USN wing is the natural case (Vipers and Eagles on the boom, Hornets and Tomcats on the drogue). Pass a turn, read the ATO, then look at the two orbits on the map. ~20 min, no flying needed for the first read. **Also run the negative case:** a wing with probe receivers but only a boom tanker. ~30 min total.
 - **Pass:** two `Refueling` flights in the one support package, one serving each method, on visibly separate racetracks both outside the threat rings. In the negative case, still exactly one tanker and the package intact.
-- **Fail signature:** two tankers of the *same* method, which means the unconstrained first flight and the constrained second one picked the same squadron — the constraint is not reaching `best_squadron_for`. Or two tankers stacked on one racetrack, which means the orbit slot is not being applied. Or the package gone entirely in the negative case, which means the extra flight is not actually optional.
+- **Fail signature:** two tankers of the *same* method, which means a proposal went out without its method or the constraint is not reaching `best_squadron_for` (before 2026-09-17 the unconstrained first flight did exactly this). Or a second tanker launching far from the station while one of its method sits there, which means it is being ranked from the first tanker's field. Or two tankers stacked on one racetrack, which means the orbit slot is not being applied. Or the package gone entirely in the negative case, which means the extra flight is not actually optional.
 
 ### B77 — A player's ramp allowance matches the airframe · #214 startup times · ☐ UNTESTED
 

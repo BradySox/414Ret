@@ -79,17 +79,26 @@ class PlanRefueling(PackagePlanningTask[MissionTarget]):
         return None
 
     def _land_tanker_for(self, method: AirRefuelType) -> Optional["AircraftType"]:
-        """A land-based tanker that dispenses `method`, or None if only a boat has one."""
+        """The land tanker the planner ranks best for `method` at this station, or None.
+
+        Taken from the planner's own ranking, so a type that exists but cannot reach
+        the station does not count as covering its method -- the first tanker is
+        mandatory, and one that cannot be filled scrubs the package. Picking the first
+        matching type in wing order instead flew a KC-135 160 NM over a KC-10 at 0.
+        An untagged tanker passes the planner's method filter but covers nothing here.
+        """
         if self._air_wing is None:
             return None
-        for squadron in self._air_wing.iter_squadrons():
-            if squadron.untasked_aircraft <= 0:
-                continue
-            if not squadron.capable_of(FlightType.REFUELING):
-                continue
-            location = squadron.location
-            if getattr(location, "is_carrier", False) or getattr(
-                location, "is_fleet", False
+        for squadron in self._air_wing.best_squadrons_for(
+            self.target,
+            FlightType.REFUELING,
+            1,
+            heli=False,
+            this_turn=True,
+            refuel_methods=frozenset({method}),
+        ):
+            if getattr(squadron.location, "is_carrier", False) or getattr(
+                squadron.location, "is_fleet", False
             ):
                 continue
             if method in squadron.aircraft.tanker_refuel_types:
@@ -106,27 +115,23 @@ class PlanRefueling(PackagePlanningTask[MissionTarget]):
             )
             self.propose_flight(FlightType.ESCORT, 2, EscortType.AirToAir)
             return
-        # The first tanker is deliberately left unconstrained, so a coalition whose
-        # aircraft declare no refuelling method -- or whose only tanker declares
-        # none -- plans exactly what it planned before this existed.
-        self.propose_flight(FlightType.REFUELING, 1)
-        # One more per further method. Optional, because a wing that flies probe
-        # receivers without owning a drogue tanker should still get the boom tanker
-        # it can field rather than losing the package.
-        #
-        # Only methods a LAND tanker can serve. Without that filter the land
-        # station's probe slot reaches for the carrier's A-6E and drags it 314 NM
-        # off its boat -- which is the defect this whole change exists to stop, and
-        # pointless besides: the boat's own station already covers its receivers.
-        for method in self.needed_refuel_methods[1:]:
-            if not self._land_tanker_for(method):
-                continue
+        # One tanker per method a LAND tanker can fly here; a boat-only method is its
+        # own station's job (else the probe slot drags the A-6E 314 NM off its boat).
+        tankers = {m: self._land_tanker_for(m) for m in self.needed_refuel_methods}
+        methods = [m for m in self.needed_refuel_methods if tankers[m] is not None]
+        if not methods:
+            # Nothing declares a method, or no fitting tanker can come: as before U15.
+            self.propose_flight(FlightType.REFUELING, 1)
+        # The first is constrained too: left free it took the best squadron overall,
+        # and the loop then re-proposed that method -- two boom, no probe (B76). It is
+        # mandatory so a short wing still buys a tanker; the rest never scrub.
+        for index, method in enumerate(methods):
             self.propose_flight(
                 FlightType.REFUELING,
                 1,
-                optional=True,
+                optional=index > 0,
                 refuel_methods=frozenset({method}),
-                preferred_type=self._land_tanker_for(method),
+                preferred_type=tankers[method],
             )
         # See PlanAewc: untagged, this is a primary flight whose shortage scrubs
         # the tanker package outright.

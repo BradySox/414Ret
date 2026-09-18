@@ -288,6 +288,16 @@ class Flight(
         self._ensure_flight_plan_builder()
         return self._flight_plan_builder.get_or_build()
 
+    @property
+    def laid_out_flight_plan(self) -> FlightPlan[Any] | None:
+        """The flight plan already built, or None. Never builds one.
+
+        For a builder that has to look at other flights' plans: reading
+        ``flight_plan`` there would build the peer's plan, which looks back.
+        """
+        self._ensure_flight_plan_builder()
+        return self._flight_plan_builder.built
+
     def degrade_to_custom_flight_plan(self) -> None:
         from .flightplans.custom import Builder as CustomBuilder
 

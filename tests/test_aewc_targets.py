@@ -167,9 +167,9 @@ def test_no_matching_basing_falls_back_to_generic_ranking() -> None:
 
 # ---- ObjectiveFinder._aewc_hosting_anchor -------------------------------------
 #
-# Where the direction actually lives. Both anchors share one walk over the
-# unthreatened land CPs that host a usable AWACS; the rear pick takes the one
-# farthest from threats, the forward pick the one nearest.
+# Where the direction actually lives. Both anchors share one walk over the LAND
+# CPs that host a usable AWACS; an unthreatened field beats a threatened one, the
+# rear pick takes the one farthest from threats and the forward pick the nearest.
 
 
 def _host_cp(
@@ -177,6 +177,7 @@ def _host_cp(
     threat_distance: float,
     hosts_awacs: bool = True,
     hosts: Any = None,
+    fleet: bool = False,
 ) -> Any:
     from game.ato.flighttype import FlightType
 
@@ -193,6 +194,7 @@ def _host_cp(
     return SimpleNamespace(
         name=name,
         is_carrier=False,
+        is_fleet=fleet,
         squadrons=squadrons,
         position=SimpleNamespace(name=name, threat_distance=threat_distance),
     )
@@ -233,7 +235,7 @@ def test_a_field_with_no_awacs_is_never_the_anchor() -> None:
     assert finder._aewc_hosting_anchor(forward=True) is host
 
 
-def test_a_threatened_field_is_never_the_anchor() -> None:
+def test_an_unthreatened_field_beats_a_threatened_one() -> None:
     exposed, safe = _host_cp("Exposed", 5_000), _host_cp("Safe", 50_000)
     finder = _objective_finder([exposed, safe], threatened=frozenset({"Exposed"}))
     assert finder._aewc_hosting_anchor(forward=True) is safe
@@ -254,7 +256,7 @@ def test_every_carrier_gets_its_own_tanker_station_plus_one_ashore() -> None:
 
     boat, spare, ashore = (
         _cp("CVN", carrier=True),
-        _cp("LHA", carrier=True),
+        _cp("CVN-2", carrier=True),
         _cp("Base"),
     )
     finder = SimpleNamespace(
@@ -273,3 +275,93 @@ def test_the_tanker_land_anchor_takes_a_tanker_hosting_field() -> None:
     host = _host_cp("TankerHome", 300_000, hosts=FlightType.REFUELING)
     finder = _objective_finder([bare, host])
     assert finder._support_hosting_anchor(FlightType.REFUELING, forward=True) is host
+
+
+# ---- the land anchor must be land (test 36, 2026-09-17) -----------------------
+#
+# Every blue field on Long Road to H3 turn 1 sat inside red's threat zone, so the
+# hosting walk found nothing and the anchor fell back to the generic farthest-CP
+# pick, which filtered only off-map spawns. It came back LHA-1 Tarawa, 3.29 NM from
+# CVN-71: CVN-71's one E-2C squadron flew two racetracks 14.9 NM apart.
+
+
+def test_an_lha_is_never_the_land_anchor() -> None:
+    # Lha never overrides is_carrier, so the old is_carrier filter let it through.
+    lha = _host_cp("LHA", 900_000, fleet=True)
+    field = _host_cp("Field", 10_000)
+    finder = _objective_finder([lha, field])
+    assert finder._aewc_hosting_anchor(forward=False) is field
+    assert finder._land_support_fallback(forward=False) is field
+
+
+def test_with_every_field_threatened_the_shallowest_host_is_taken() -> None:
+    # distance_to_threat is unsigned: inside the zone it is the DEPTH. The old
+    # rear pick maximised it and chose the field deepest in enemy airspace.
+    shallow = _host_cp("Shallow", 5_000)
+    deep = _host_cp("Deep", 60_000)
+    finder = _objective_finder(
+        [shallow, deep], threatened=frozenset({"Shallow", "Deep"})
+    )
+    assert finder._aewc_hosting_anchor(forward=False) is shallow
+    assert finder._aewc_hosting_anchor(forward=True) is shallow
+
+
+def test_a_threatened_host_is_used_rather_than_none() -> None:
+    # Incirlik held the E-3A with two untasked jets and was skipped as threatened.
+    only = _host_cp("Incirlik", 20_000)
+    finder = _objective_finder([only], threatened=frozenset({"Incirlik"}))
+    assert finder._aewc_hosting_anchor(forward=False) is only
+
+
+def test_a_threatened_host_is_skipped_while_any_field_is_clear() -> None:
+    # The threatened-host rule is for a theatre with no clear field at all. With one
+    # clear field, a threatened host's orbit is laid from the nearest edge with no
+    # guarantee it clears a second zone; the clear field's fallback orbit does. The
+    # walk returns None and the caller falls back to the clear field, as before.
+    host = _host_cp("ThreatenedHost", 18_500)
+    clear = _host_cp("ClearNoAwacs", 395_000, hosts_awacs=False)
+    finder = _objective_finder([host, clear], threatened=frozenset({"ThreatenedHost"}))
+    assert finder._aewc_hosting_anchor(forward=False) is None
+    assert finder._land_support_fallback(forward=False) is clear
+
+
+def test_an_all_fleet_wing_has_no_land_anchor() -> None:
+    boats = [_host_cp("CVN", 900_000, fleet=True), _host_cp("LHA", 5, fleet=True)]
+    finder = _objective_finder(boats)
+    assert finder._aewc_hosting_anchor(forward=False) is None
+    assert finder._land_support_fallback(forward=False) is None
+    assert finder._land_support_fallback(forward=True) is None
+
+
+def test_no_land_anchor_leaves_the_carriers_alone() -> None:
+    boat = _cp("CVN", carrier=True)
+    finder = SimpleNamespace(
+        friendly_control_points=lambda: iter([boat]),
+        front_lines=lambda: iter([object()]),
+        aewc_land_anchor=lambda: None,
+    )
+    assert _aewc_targets(finder) == [boat]  # type: ignore[arg-type]
+
+
+def test_an_anchor_already_in_the_list_is_not_added_twice() -> None:
+    # Latent on brady.retribution turn 3: the old fallback returned CVN-71, already
+    # a carrier target. Only the hosting walk finding Incirlik first hid it.
+    boat = _cp("CVN", carrier=True)
+    finder = SimpleNamespace(
+        friendly_control_points=lambda: iter([boat]),
+        front_lines=lambda: iter([object()]),
+        aewc_land_anchor=lambda: boat,
+    )
+    assert _aewc_targets(finder) == [boat]  # type: ignore[arg-type]
+
+
+def test_the_tanker_list_is_deduped_the_same_way() -> None:
+    from game.commander.theaterstate import _refueling_targets
+
+    boat = _cp("CVN", carrier=True)
+    for anchor in (boat, None):
+        finder = SimpleNamespace(
+            friendly_control_points=lambda: iter([boat]),
+            tanker_land_anchor=lambda anchor=anchor: anchor,
+        )
+        assert _refueling_targets(finder) == [boat]  # type: ignore[arg-type]

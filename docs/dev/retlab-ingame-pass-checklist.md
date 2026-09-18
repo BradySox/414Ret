@@ -256,7 +256,7 @@ no evidence either way after 33 missions.
 
 ## Outstanding rows at a glance
 
-81 rows need a live pass. Full detail is under each `###` heading below —
+82 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -301,6 +301,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B128 | An escort comes home when its primary never flies | §8 | ☐ |
 | B129 | A flight with fuel to spare has no tanker leg | §46-adjacent | ☐ |
 | B130 | The Viper's STPT 25 is the bullseye the kneeboard names | §74 | ☐ |
+| B131 | The land AWACS orbit sits over land, and two AWACS never share a racetrack | support orbits | ☐ |
 | B126 | An AI DEAD gets its shot: the EWR is fragged first, and the site it covered is live the turn after | doctrine row 8 | ☐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | Skynet point defence: the paired SHORAD answers the HARM shot | Skynet return | ☐ |
@@ -1341,14 +1342,28 @@ Needs a flight to confirm the fix end to end. The cheap version deliberately rep
 
 ## C. Support flights
 
-### C1 — AWACS/tanker orbit front-anchor · #84 · ☑ VERIFIED
+### C1 — AWACS/tanker orbit front-anchor · #84 · ✅ CLOSED (reverted 2026-08-09)
+
+- **Closed by the planner re-convergence (work order D).** `support_orbit_anchor` and
+  `supportorbit.py` were deleted by `c2065db12`; nothing in `aewc.py` or
+  `theaterrefueling.py` consults a front line, so "support racetracks anchor on the FLOT"
+  describes code that no longer exists. Found still marked VERIFIED during the test 36
+  AWACS audit (2026-09-17).
+- Was ☑ VERIFIED 2026-06-24; the finding is preserved in git history.
 
 **History:** 2026-06-24
 - **Setup:** Any campaign with AWACS + tanker support.
 - **Pass:** Support racetracks anchor on the FLOT, behind the front.
 - **Fail signature:** Red AWACS flung far off-axis (the ~175 NM case #84 fixed).
 
-### C2 — Support orbit depth behind FLOT · #86 · ☑ VERIFIED
+### C2 — Support orbit depth behind FLOT · #86 · ☑ VERIFIED · ⚠ PARTLY SUPERSEDED (2026-08-09)
+
+- **2026-09-17 — half of this row no longer describes the code.** "Deep behind the FLOT"
+  and the AI depth asymmetry (`AI_SUPPORT_DEPTH_FACTOR`) went with `supportorbit.py` in
+  the §6 revert (`c2065db12`, work order D). **The other half still holds:** `aewc.py`
+  stations the orbit `aewc_threat_buffer_min_distance` (default 80 NM) outside the threat
+  zone and the tanker builder does the same at 70 NM, so "clear of forward SAM reach" is
+  still what the code does.
 
 **History:** 2026-06-24
 - **Setup:** As C1; watch where the orbit actually sits relative to threats.
@@ -7980,3 +7995,33 @@ than waiting on a hangar deck that never clears, and client flights are never mo
 - **Pass:** the two agree, and the HSD bullseye readouts reference that point.
 - **Fail signature:** STPT 25 holds a tanker or AWACS anchor (test 36's DED read the AWACS
   orbit), or the cartridge writes fewer anchors than it used to and one you wanted is gone.
+
+### B131 — The land AWACS orbit sits over land, and two AWACS never share a racetrack · support orbits · ☐ UNTESTED
+
+The fix for the three overlapping orbits in the test 36 follow-up (2026-09-17). With
+every blue field inside red's threat zone, the land AEW&C anchor fell back to a generic
+pick that filtered only off-map spawns, and came back LHA-1 Tarawa, 3.29 NM from CVN-71:
+the carrier's one E-2C squadron flew two racetracks 14.9 NM apart, beside the carrier
+tanker. The anchor is now land-only (`is_fleet`), a threatened host is taken only when
+every land field is threatened, a repeated target is never planned twice, and each
+further AWACS on one station steps 20 NM back from the threat (the tanker's pattern; the
+August sideways spread was reviewed and not restored). Replayed on `autosave.retribution`:
+AEW&C `[CVN-71, LHA-1]` 3.29 NM apart →
+`[CVN-71, Incirlik]` 81.8 NM apart, and the land tanker station Gaziantep (hosts no
+tanker) → Incirlik (hosts the KC-135s).
+
+- **Setup:** Long Road to H3 on a turn where every blue field is threatened — turn 1 of
+  a NEW game, or `autosave.retribution`. Generate, then look at the F10 support boxes.
+  ~5 min, no fly needed.
+- **Pass:** one AEW&C orbit over the carrier and one inland off Incirlik, clearly
+  separate; the land tanker orbit off Incirlik, not Gaziantep; no orbit centred on a ship
+  that is not a carrier.
+- **Optional, for the spacing:** hand-frag a second AWACS onto a station that already has
+  one. Pass: the new one sits 20 NM further from the threat, parallel, the first unmoved.
+  Then delete the first and frag another: it should take the freed spot, not stack on the
+  survivor.
+- **Fail signatures:** two AEW&C racetracks side by side near the boat (the land anchor
+  is still a ship); an AWACS orbit centred on the LHA; a land orbit anchored on a field
+  that hosts no AWACS or tanker while one that does sits threatened and unused; a
+  hand-fragged second AWACS stacked on the first, or stepped toward the threat.
+

@@ -61,34 +61,43 @@ def split_release_gate(
     return planned_join_elapsed + (planned_split_elapsed - planned_join_elapsed) // 2
 
 
-def create_player_split_release_trigger(
+def create_split_release_trigger(
     group: FlyingGroup[Any],
     package: Package,
     mission: Mission,
     position: Point,
     planned_split_elapsed: Optional[int],
     planned_join_elapsed: Optional[int],
+    zone_release: bool = True,
 ) -> None:
-    """Release a package's escorts when a PLAYER-flown primary flight splits.
+    """Release a package's escorts even when the primary never sets the flag.
 
-    DCS never runs a client-occupied group's route tasks, so the ``setUserFlag``
-    script that SplitPointBuilder puts on the primary flight's SPLIT waypoint
-    never fires when the human is flying that flight: the escorts stay on their
-    Escort ControlledTask and follow the player home instead of recovering at
-    their own base (test 7, 2026-08-17 -- both Growlers landed at the player's
-    field, not the boat). Mission triggers run whoever is in the cockpit, so
-    mirror the flag here.
+    Two ways the ``setUserFlag`` script on the primary's SPLIT waypoint never
+    runs. DCS never runs a client-occupied group's route tasks, so a human
+    leading the package leaves the escorts on their Escort ControlledTask,
+    following him home instead of recovering at their own base (test 7,
+    2026-08-17 -- both Growlers landed at the player's field, not the boat).
+    And an AI primary that never reaches SPLIT -- never spawned, wedged on a
+    carrier deck, shot down -- strands its escorts at the escort-hold anchor
+    for the rest of the mission (test 36, 2026-09-17: five flights, four of
+    them 170-310 km inside red airspace at mission end).
 
-    Releasing LATE costs the player an escort that follows him home; releasing
-    EARLY costs him the escort over the target. Every degrade here is therefore
+    Releasing LATE costs an escort that follows the primary home; releasing
+    EARLY costs the escort over the target. Every degrade here is therefore
     toward late: with no gate to tell the inbound pass from the outbound one
     (see split_release_gate) the zone is dropped and the backstop stands alone.
+    ``zone_release`` is off for an AI primary, whose own script is the normal
+    path -- the time backstop is only the net under it.
     """
     comment = f"SplitRelease{id(package)}"
     if any(x.comment == comment for x in mission.triggerrules.triggers):
         return
 
-    gate = split_release_gate(planned_join_elapsed, planned_split_elapsed)
+    gate = (
+        split_release_gate(planned_join_elapsed, planned_split_elapsed)
+        if zone_release
+        else None
+    )
     backstop = (
         planned_split_elapsed + SPLIT_RELEASE_BACKSTOP_S
         if planned_split_elapsed is not None

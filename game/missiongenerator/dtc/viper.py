@@ -10,8 +10,8 @@ Sections emitted (schema mined from ``CoreMods/aircraft/F-16C/DTC``):
   named via the ``note`` field; the flight route first, then the flight's OWN
   orbit (racetrack or hold point) and the tanker / AEW&C anchors as extra
   steerpoints (the SA-page ask, Viper-style -- the jet has no orbit element).
-  The editor caps the list at 25 and the jet auto-sequences only 1-20, so the
-  route takes 1-20 and anchors 21-25.
+  The jet auto-sequences only 1-20 and reserves 25 for the bullseye, so the
+  route takes 1-20 and anchors 21-24.
 * ``MPD.GEO_LINES`` -- the boundary with red land on line set L1, and a box
   around each tanker this jet can use on L2-L4, nearest first. The four sets share 25 points.
 * ``MPD.THREAT_PTS`` -- viewer-fogged enemy SAM rings ("Custom" type, radius
@@ -60,9 +60,13 @@ if TYPE_CHECKING:
 
 VIPER_UNIT_TYPE = "F-16C_50"
 
-MAX_STEERPOINTS = 25
+#: STPT 25 is the jet's BULLSEYE -- "automatically configured as such when a
+#: mission is loaded" (EA guide p325) -- so a 25th nav point overwrites it and
+#: every bullseye readout reads the anchor instead. Test 36 put the AWACS orbit
+#: there. Stop at 24; DCS fills 25 from the miz, which §95 already pins.
+MAX_STEERPOINTS = 24
 #: The jet auto-sequences only from STPT 1-20 (EA guide p223), so the flown
-#: route stops there and the support anchors take 21-25.
+#: route stops there and the support anchors take 21-24.
 MAX_ROUTE_STEERPOINTS = 20
 MAX_GEO_LINE_SETS = 4
 #: GEO_LINES owns steerpoints 31-55 (``GEO_LINES.lua`` refuses a 26th point,

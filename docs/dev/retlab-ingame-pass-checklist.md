@@ -150,6 +150,79 @@ watch, not a verdict. NEW game required for the marker moves.
 | B120, B121 | No player; no neutral-border event |
 | B11, B45 | Setting off / no GPS weapon released |
 
+### 2026-09-17 — test 36: Long Road to H3 turn 2, and the carrier that launched two flights
+
+Syria, Long Road to H3 turn 2, 71 min, no player (the COUGAR SEAD Escort Viper slot went
+unmanned), `Tacview-20260917-181958`, DCS 2.9.29.27468. Blue took Aleppo. Rows moved:
+**B17 ✗ REGRESSED**. Evidence on B70, B85, B111, G42, S3.
+
+**The headline, and it causes three of the four things the DM reported.** The auto-planner
+fragged **50 aircraft in 24 groups onto CVN-71's deck**, all `TakeOffParkingHot`, activating
+between t=2 s and t=1233 s. Counted off the ACMI object declarations: **17 of the 50 ever
+existed**. The deck accepted spawns up to t=233 s (14 airframes placed) and from t=281 s
+onward **every carrier group silently failed to spawn** — 14 whole groups, 33 aircraft, no
+DCS log line, no crash, nothing in `state.json` but a record with two identical samples at
+the boat's reference point and `alt = -1`. Of the 14 that were placed, **two groups launched**
+(`CVN-71 BARCAP|2|43` at t=2 s, `Incirlik BARCAP|2|41` at t=103 s); the rest sat hot on the
+deck at 22 m for the full 71 minutes, drifting 25 km with the ship.
+
+This is the B17 fail signature written down in 2026-07-17 ("a boat carrying two air wings loses
+its delayed packages to gridlock"), except this is an **upstream-authored campaign and the
+planner's own frag**, not a merged-campaign quirk. The spawn path has no deck-capacity check:
+`flightgroupspawner.py`'s `NoParkingSlotError` retry is gated on `isinstance(cp, Airfield)`, so
+a carrier never reaches the runway-start or air-start fallback.
+
+**The knock-on: five escorts ended the mission parked in red airspace.** An escort's `Escort`
+task is a `ControlledTask` whose ONLY stop condition is the primary flight's
+`split-<id>` user flag, set by a `DoScript` on the primary's SPLIT waypoint. When the primary
+never flies, the flag never fires and the escort holds its ESCORT HOLD anchor until the mission
+ends. Measured at t=4260 s, distance from the anchor / from home:
+
+| Escort | at anchor | from home | primary |
+|---|---|---|---|
+| COUGAR Escort (F-16CM) | 3.1 km | 310 km | COUGAR BAI — on deck, never launched |
+| PUMA Escort (F-16CM) | 1.5 km | 272 km | PUMA BAI — on deck, never launched |
+| PUMA SEAD Escort (F-16CM) | 0.9 km | 273 km | PUMA BAI |
+| HORNET Escort (F-15E) | 4.7 km | 168 km | HORNET DEAD — never spawned |
+| SCORPION Escort (F-15E) | 4.7 km | 169 km | SCORPION BAI — never spawned |
+
+The anchor itself is placed correctly (`get_initial_point`, 7–9 NM short of the target;
+COUGAR's measured 16.2 km = 8.75 NM). The defect is that release has no fallback — not a
+timeout, not a check that the escorted group is alive or airborne.
+
+**Three more defects found in the same capture, none of them a checklist row:**
+
+1. **§74's Viper cartridge overwrites the jet's bullseye.** `viper.py` sets
+   `MAX_STEERPOINTS = 25` and puts the support anchors on 21–25. The F-16C EA guide p324–325:
+   *"The steerpoint normally used for Bullseye is steerpoint 25 and is automatically configured
+   as such when a mission is loaded."* The DM's DED photo shows STPT 25 at N37°39.652′
+   E035°11.144′ = **x 295171, y −53681**, which is this mission's `AWACS WIZAR` anchor to the
+   metre, while the kneeboard's bullseye reads Aleppo (36°10′50″N 37°13′28″E = x 125570,
+   y 123132, matching the miz's own `coalition.blue.bullseye` at x 125576.86, y 123125.30).
+   §95 is correct; the cartridge clobbers it. Fix is to cap at 24.
+2. **§45's drawn support racetrack is narrower than the turn the aircraft flies.**
+   `SUPPORT_ORBIT_RADIUS_M = 3704.0` is a fixed 2 NM half-width. Measured on-station points
+   outside the drawn capsule: Texaco 8 (KC-135) 75 of 121, worst 14.0 km beyond the outline;
+   Arco 9 83 of 122, worst 15.3 km; Wizard 5 (E-3A) 66 of 126, worst 10.1 km; Overlord 3
+   (E-2C) worst 5.2 km; Dodge 2 (A-6E) worst 2.9 km. A 30°-bank turn at the KC-135's 411 kt
+   orbit speed is ~7.9 km radius on its own. The box needs to be sized off the orbit speed.
+3. **The REFUEL waypoint is not gated on needing fuel.** `_build_refuel` says so in its own
+   comment. The B-1B flew its egress to x 286162, y −13261 — 66 km PAST Incirlik — arriving at
+   t=4200 s with **fuel 0.894**, and its SPLIT waypoint had already set `SetUnlimitedFuel` true,
+   so the leg cost it nothing to gain nothing and it was still out there at mission end. The
+   `ControlledTask` on that waypoint is also a window, not a low-fuel trigger: it starts when
+   every unit is **above** 0.20 and stops when every unit is above 0.50, so a flight below 0.20
+   never refuels at all.
+
+| Row | Why test 36 could not answer it |
+|---|---|
+| B120, B121, B125, B104, B110, B113, B114, B77, H10, H14–H16, G36, B106, B117, B119 | No human flew; the one client slot went unmanned |
+| B11, B45 | Setting off / no GPS weapon released |
+| B32, B39, B16 | `cruise_missiles_state` and `naval_magazines_state` both empty — no raid, no anti-ship release |
+| L-rows, M6 | `Vietnam Ops plugin - no VietnamOps data; skipping` |
+| P-rows | Not a COIN campaign |
+| B126 | Blue's two DEAD packages never spawned, so the ordering was never exercised |
+
 ### 2026-09-16 — the line-by-line audit of every open row against tests 1–33
 
 Every open row was read against the 33 captures on the desk (`dcs.log`, `.miz`, `state.json`,
@@ -183,7 +256,7 @@ no evidence either way after 33 missions.
 
 ## Outstanding rows at a glance
 
-76 rows need a live pass. Full detail is under each `###` heading below —
+80 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -192,7 +265,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B6 | Command-center decapitation degrades enemy planning | §52 | ☐ |
 | B11 | Ground AI sleep: distant garrisons stop thinking, wake on approach | §59 | ☐ |
 | B15 | Squadron-sequenced board numbers: the Tomcat's livery is its modex | §62 | ☑ |
-| B17 | Carrier deck spawn policy (six-pack last resort + MP slot timing) | §64 | ◐ |
+| B17 | Carrier deck spawn policy (six-pack last resort + MP slot timing) | §64 | ✗ |
 | B19 | Weather-aware auto-planning | §67 | ☐ |
 | B20 | Adaptive procurement: SAM repair + price-weighted choice | §68 | ☐ |
 | B21 | Cross-package SEAD-before-strike coordination | §69 | ☑ |
@@ -224,6 +297,10 @@ stress it · `✗` fail signature reproduced in-game.
 | B123 | An Armed Recon flight engages a gun-defended target instead of overflying the search point | §35 | ☐ |
 | B124 | A hand-fragged Harrier DEAD opens the New Flight dialog on the DEAD preset, not a stock Snakeye fit | New Flight dialog | ✗ |
 | B125 | A dynamic-slot jet spawns with the template's route, radios and loadout | §101 | ☐ |
+| B127 | A crowded carrier deck launches everything it parks, and the rest start airborne | §64 | ☐ |
+| B128 | An escort comes home when its primary never flies | §8 | ☐ |
+| B129 | A flight with fuel to spare has no tanker leg | §46-adjacent | ☐ |
+| B130 | The Viper's STPT 25 is the bullseye the kneeboard names | §74 | ☐ |
 | B126 | An AI DEAD gets its shot: the EWR is fragged first, and the site it covered is live the turn after | doctrine row 8 | ☐ |
 | G25 | Armed Recon package: recon drone + SEAD Viper escort + 4-ship sweep | §3 | ◐ |
 | G30 | Skynet point defence: the paired SHORAD answers the HARM shot | Skynet return | ☐ |
@@ -800,7 +877,24 @@ jets. See §62.
 - **Pass:** at ~4 min the launching side gets "CRUISE MISSILES AWAY — N missile(s) from <ship> inbound to <target>" and the defender only "LAUNCH WARNING — enemy cruise missile launch detected" (log: `CRUISEMISSILES|: <group> fired N`); missiles visibly launch, cruise to the planned building/C2 target and impact (Tacview: BGM-109/Kalibr tracks); the F10 call lands a salvo near the marker (a `#N` marker text fires exactly N); "Magazine status" counts down by exactly what fired; next turn the debrief shows the killed TGO units as ordinary ground losses, and the following mission's magazine reads the debited stock (fire the whole magazine over 2-3 missions → the ship goes silent, menu answers "no ship with missiles in range").
 - **Fail signature:** cue fires but no missile leaves the rail (the ship AI rejected the scripted FireAtPoint or the hull carries no cruise missiles — check the hull against the encyclopedia, drop it from `LACM_SHIP_DCS_IDS` if the fit is wrong); guns fire instead of missiles (weaponType flag ignored — re-check 2097152 reached the task table); the full VLS ripples ignoring `expendQty` (quantity not honored — cap the magazine emit as the only guard and note it); magazine never decrements across turns (`cruise_missiles_state` missing from the state json — the §57 dirty_state path); a raid fragged inside a ROE zone on a Vietnam/COIN campaign (the §40 gate didn't hold); missiles vanish into a ridge every time at max range (shorten `MAX_RAID_RANGE_M`).
 
-### B17 — Carrier deck spawn policy (six-pack last resort + MP slot timing) · §64 · ◐ PARTIAL
+### B17 — Carrier deck spawn policy (six-pack last resort + MP slot timing) · §64 · ✗ REGRESSED (2026-09-17, test 36)
+
+**2026-09-17, test 36 — the fail signature reproduced, and worse than the 2026-07-17 reading.**
+Long Road to H3 turn 2 fragged **50 aircraft in 24 groups onto one CVN-71**, all
+`TakeOffParkingHot`. **17 of 50 ever existed** in the ACMI; the deck took spawns up to t=233 s
+(14 airframes) and every carrier group activating from t=281 s on failed silently — no log
+line, no error, a `state.json` record with two identical samples at the boat reference and
+`alt = -1`. Two groups launched; twelve more sat hot on deck for 71 minutes. Five escorts
+based ashore were stranded at their ESCORT HOLD anchors because their carrier primaries never
+flew. Full write-up in the test 36 section above.
+
+**The engine has no deck-capacity check.** `flightgroupspawner.py:370` gates the
+`NoParkingSlotError` retry (runway start, then air start) on `isinstance(cp, Airfield)`, so the
+carrier path at line 269 (`_generate_at_group` on the carrier `ShipGroup`) has no fallback at
+all — pydcs places the unit and DCS quietly declines. The remedy this row's own fail-signature
+note already names applies: exempt overflow flights at generation, because the deck count is
+knowable. Test 9's "full deck" was 24 on CVN-72 and launched clean, so the ceiling sits between
+24 and this capture's 50; the observed placement cutoff here was 14.
 
 **2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **partial, one more data point.** Test 32's six CVN-71 BARCAP Hornets activate at 1 s (the LAST_RESORT trick) and all launched; the Tomcat 2-s rule from #1020 has not generated yet (no carrier Tomcats since 09-14: test 33's CVN-62 flew Hornets only). Six-pack overflow and MP slot timing still unobserved.
 
@@ -7824,3 +7918,51 @@ group stays in the slot list, so the real flight is marked and there is no clone
   cause); the fragged slot vanished from the slot list (the template is consumed after all,
   so the build must clone). A jet with the payload but no route is not a fail — it is
   answer 1 and shrinks the feature to loadout and properties.
+
+
+### B127 — A crowded carrier deck launches everything it parks, and the rest start airborne · §64 · ☐ UNTESTED
+
+The fix for test 36's silent loss of 33 carrier aircraft (see the test 36 section). The
+deck ceiling is the Supercarrier guide's 16 parking spots; the overflow air-starts rather
+than waiting on a hangar deck that never clears, and client flights are never moved.
+
+- **Setup:** a carrier campaign where the boat's squadrons can frag well past 16 airframes
+  in one turn — Long Road to H3 turn 2 did 50 — with at least one client flight on the
+  deck. Generate, open the miz, count the groups spawning at the carrier. ~15 min, plus a
+  fly if you want the launch half.
+- **Pass:** no more than 16 aircraft are parked on the boat at mission start; every flight
+  beyond that is in the air at its first waypoint; the client flight is on the deck; every
+  planned flight exists in the mission. In the fly: the parked flights all get airborne.
+- **Fail signatures:** a group in the ATO with no aircraft anywhere in the mission (the
+  old signature — check `state.json` for a record with two identical samples at the boat
+  and `alt = -1`); a client flight air-started; more than 16 on deck; aircraft parked on
+  deck that never taxi, which means 16 is still too many for that mix and the F-14
+  footprint rule needs modelling after all.
+
+### B128 — An escort comes home when its primary never flies · §8 · ☐ UNTESTED
+
+- **Setup:** any package whose primary is AI and can be prevented from reaching SPLIT —
+  easiest is a carrier primary on a full deck, or shoot it down yourself on the ingress.
+- **Pass:** the escort turns for home within ~15 minutes of the primary's planned split
+  time and recovers at its own field.
+- **Fail signature:** the escort is still circling its ESCORT HOLD anchor at mission end
+  (test 36: five flights, four of them 168–310 km inside red airspace).
+
+### B129 — A flight with fuel to spare has no tanker leg · §46-adjacent · ☐ UNTESTED
+
+- **Setup:** any turn with tankers planned and a long-legged aircraft on a short sortie —
+  a bomber or a Strike Eagle off a near field.
+- **Pass:** that flight's kneeboard has no Refuel row and its route goes target → split →
+  home; a flight that genuinely needs the gas still has one.
+- **Fail signature:** a flight that needed a top-off is planned without one and lands
+  short or diverts — record the airframe, because the 2×/3× reserve thresholds are the
+  knob. Conversely a bomber still detouring past its own field means the drop did not fire;
+  check whether the airframe has a measured `fuel:` block (most do not).
+
+### B130 — The Viper's STPT 25 is the bullseye the kneeboard names · §74 · ☐ UNTESTED
+
+- **Setup:** any campaign turn with a client F-16C and DTC on. Slot in, read the kneeboard
+  Bullseye line, then select STPT 25 on the DED.
+- **Pass:** the two agree, and the HSD bullseye readouts reference that point.
+- **Fail signature:** STPT 25 holds a tanker or AWACS anchor (test 36's DED read the AWACS
+  orbit), or the cartridge writes fewer anchors than it used to and one you wanted is gone.

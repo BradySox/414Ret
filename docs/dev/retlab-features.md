@@ -1973,6 +1973,20 @@ defect that reached a build, most of them found by flying.
   player-slotted package was hit too; a package whose primary has no client slots releases
   from the `RunScript` and was never affected. Checklist B78; tests
   `tests/missiongenerator/aircraft/test_split_release.py`.
+- **An escort whose primary never flew held its anchor until the mission ended (fixed
+  2026-09-17).** The backstop above was installed only for a **client-led** package, on the
+  reading that an AI primary always runs its own `RunScript`. It does not when it never
+  reaches SPLIT. Test 36: five escorts — COUGAR, PUMA ×2, HORNET, SCORPION — sat within
+  5 km of their escort-hold anchors at mission end, four of them 168–310 km inside red
+  airspace, because their carrier primaries were either wedged on the deck or never spawned
+  at all (see §64). Nothing raised the flag, and the `Escort` `ControlledTask`'s only stop
+  condition is that flag. `create_player_split_release_trigger` is now
+  `create_split_release_trigger` and runs for **every** primary, with a `zone_release`
+  argument that keeps the 15 km zone for the human case only: for an AI primary the
+  `RunScript` is still the normal release and the `TimeAfter(split + 900 s)` backstop is
+  only the net under it. Setting a flag that is already true costs nothing, so the normal
+  case is byte-unchanged in behaviour. Covers the shot-down primary too, which had the same
+  hole. Same test file.
 - **AI packages were timed to arrive after the mission ended (2026-08-24).** The spread that
   staggers non-CAP packages bounds the random **offset** by the cycle length, then adds it to
   the package's earliest possible TOT: `package.time_over_target = next(start_time) + tot`.
@@ -2002,10 +2016,27 @@ defect that reached a build, most of them found by flying.
 
 ### Refuelling
 
+- **A refuel waypoint on a flight that does not need gas (fixed 2026-09-17, DM call).** The
+  planner still emits a REFUEL waypoint whenever the coalition owns a tanker-capable
+  squadron anywhere in theater, and `_build_refuel` says in its own comment that it is not
+  a fuel-need test. Test 36: a B-1B that had burned 11% of its fuel flew **66 km past
+  Incirlik** to reach the tanker, arrived at **0.894** with `SetUnlimitedFuel` already true
+  from the split, and was still out there when the mission ended. Generation now drops the
+  waypoint when `WaypointGenerator.gets_home_without_the_tanker()` says the sortie closes
+  without it — §46's *planning* decision is untouched, the same seam as the two drops below.
+  The test is the **dry** margin from `fuel_brief_for` (the burn walk with no top-off
+  applied), against the airframe's own landing reserve: **2×** the reserve on measured fuel
+  data, **3×** on a synthesised model, because the number is a guess and the cost of being
+  wrong is a flight that does not reach its field. No model at all leaves the waypoint
+  alone. The argument is one-way — dropping the waypoint only shortens the route, so the
+  margin after the drop can only be larger than the one tested. Applies to every airframe,
+  not just the bombers. Tests `tests/missiongenerator/aircraft/test_refuel_fuel_gate.py`.
+  The `ControlledTask` on the waypoint is still upstream's and is still a *window* rather
+  than a low-fuel trigger — it starts when every unit is **above** 0.20 and stops above
+  0.50, so a flight below 0.20 never refuels. Untouched; it is upstream's call to make.
 - **Refuel waypoints on flights with no tanker to meet (fixed 2026-08-16).** The planner
   emits a REFUEL waypoint whenever the coalition owns a tanker-capable squadron
-  *anywhere in theater* — deliberately, since gating it on fuel need is exactly what the
-  reverted §46 did, so that gate is left alone. But when no tanker is actually flying the
+  *anywhere in theater*. But when no tanker is actually flying the
   mission, the waypoint is a detour to an empty piece of sky. Flown 2026-08-16: **10 of
   40** flights carried one, including a `LHA-1 Tarawa Escort` with a **14 nm** total route
   and its refuel point 3.7 nm from the boat, and a `CVN-75 Escort` at 19 nm with one at
@@ -5013,8 +5044,15 @@ per-airframe device.
   `friendly.is_blue`. Enemy + non-support flights are skipped.
 - **The orbit** — the flight's racetrack ends come from its waypoints: `race_track_start` is emitted as a
   `PATROL_TRACK` waypoint and `race_track_end` as a `PATROL` waypoint (the waypoint builder), so the pair
-  defines the leg. Drawn with `add_oblong(start, end, SUPPORT_ORBIT_RADIUS_M)` — a capsule that reads as a
+  defines the leg. Drawn with `add_oblong(start, end, radius)` — a capsule that reads as a
   racetrack — or `add_circle` if the ends coincide. Cyan, dashed (`SUPPORT_ORBIT_LINE`).
+- **The width** — `_support_orbit_radius` sizes the capsule off the flight's own `patrol_speed`: the
+  level-turn radius at 20° of bank plus 3 NM, floored at `SUPPORT_ORBIT_MIN_RADIUS_M` (2 NM). The fixed
+  2 NM half-width it replaced left the aircraft outside its own box for about half the time on station,
+  because the AI turns shallow at the end of the leg and overshoots the end waypoint before rolling in.
+  Measured on test 36: the two KC-135s ran 17.7 and 19.0 km off the leg centreline, the E-3A 13.8, the
+  E-2C 8.9. CAP stations keep the fixed 2 NM — a CAP chases contacts and no capsule can contain it, so
+  that one is a station marker, not a claim about where the flight is.
 - **The label** — `add_text_box` at the racetrack start: `<callsign>  <type>` on line 1, `<freq>  TCN <tacan>`
   on line 2. Callsign/type come from the `FlightData`; freq/TACAN come from the matching `TankerInfo`/
   `AwacsInfo` (looked up by `group_name` — `FlightData` doesn't carry the advertised freq/TACAN). AWACS has no
@@ -6565,6 +6603,35 @@ the mission takes whatever is free then, port quarter included. `SIXPACK_FIRST` 
 Tomcats still spawn with the mission-start fill, where they take the six-pack, not the
 port quarter. Tests: the `*_tomcat_*` cases in `test_carrier_deck_policy.py`.
 
+**The deck has a ceiling and generation now respects it (2026-09-17, test 36).** The ATO
+fragged **50 aircraft in 24 groups onto CVN-71**, all parking-hot. Seventeen ever existed:
+DCS placed 14, and every carrier group activating after t=281 s was dropped without a log
+line, an error or an event — 14 whole groups, 33 aircraft. Two groups launched; the rest
+sat hot on deck for the full 71 minutes. Five shore-based escorts then held their
+escort-hold anchors until the mission ended, 170–310 km inside red airspace, waiting on
+primaries that never flew. The Supercarrier Operations Guide p100 gives the number:
+*"there are 20 possible aircraft spawn locations available: the 16 parking locations
+listed below and 1 on each catapult"*, and the overflow waits on the hangar deck *"until
+a suitable parking spot is free"* — which on a deck where nothing taxis is never. Only
+the 16 take a parking start; the catapults want "Takeoff from runway hot", which nothing
+here plans.
+
+`FlightGroupSpawner` now counts what it has put on each deck (`carrier_deck_use`, owned by
+`AircraftGenerator` so the count spans the whole ATO) and **air-starts the overflow**
+rather than handing it to DCS to lose — the same last resort the airfield path already
+takes on `NoParkingSlotError`, which the carrier branch could never reach because that
+retry is gated on `isinstance(cp, Airfield)`. **Client flights are never pushed off the
+boat**: a human has to be able to slot in where the briefing says, so they take their
+spots regardless and the AI behind them absorbs the move. `CARRIER_DECK_SPAWN_SPOTS = 16`.
+
+Residual, and deliberately not modelled: the guide also says an F-14 blocks spots
+adjacent to it, so a Tomcat-heavy deck fills before 16. Test 36 stopped at 14 with eight
+Tomcats placed first, and test 9 took 24 Hornets on CVN-72 and launched them all, so the
+true number is a footprint problem, not a constant. pydcs geometry cannot express it
+(its `width` is folded/swept: the F-14 reads 10.15 m against the Hornet's 11.43). Sixteen
+is the cited figure and it removes the silent-vanish class; the last spot or two may still
+go to the hangar deck, which is what they did before.
+
 **Wiring**: `waypointgenerator.set_takeoff_time` split into the hold delay (the
 WaitingForStart remaining) and `needs_deck_placement_delay()` (carrier COLD/WARM ground
 starts; AI always, clients per policy); `should_activate_late` exempts client carrier
@@ -6579,7 +6646,8 @@ AI placement/push-time activation + the zero-hold floor, client placement under 
 policies, the delayed-client uncontrolled+StartCommand+placement combo, warm
 late-activation parity, airfield/runway no-ops, and the single-player matrix —
 cold/warm/runway late activation at the planned start time, the ten-minute rule, the
-MP + AI no-changes) and
+MP + AI no-changes), `tests/missiongenerator/test_carrier_deck_capacity.py` (the deck
+ceiling, the client exemption, per-boat counting) and
 `tests/settings/test_carrier_deck_policy.py` (default, boolean→enum migration both
 ways, never-stomp, UI visibility).
 
@@ -7378,7 +7446,9 @@ package-mates share the comm plan and SA picture):
 points, 3+3 FAOR/FLOT lines × 7 points, 40 MEZ / 15 THREAT_PTS, 25 GEO line points
 across 4 sets. Two further limits came from the F-16C EA guide (2026-08-18): the
 Viper auto-sequences only from **STPT 1-20** (p223), so the flown route caps at 20
-and the support anchors take 21-25; and GEO_LINES owns steerpoints **31-55** with
+and the support anchors take 21-24 -- **25 is the jet's bullseye**, "automatically
+configured as such when a mission is loaded" (p325), and a 25th anchor there put the
+AWACS orbit under every bullseye readout on test 36; and GEO_LINES owns steerpoints **31-55** with
 pre-planned threats at 56-70 (p202), so the point total is capped at 25 rather than
 the 32 a fuller line source would have produced. Viper steerpoints also now carry
 their HSD sub-type -- **TGT** (triangle) on target waypoints, **IP** (square) on

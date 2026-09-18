@@ -22,7 +22,7 @@ from dcs.terrain import Caucasus
 from game.missiongenerator.aircraft.waypoints._helper import (
     SPLIT_RELEASE_BACKSTOP_S,
     SPLIT_RELEASE_ZONE_RADIUS_M,
-    create_player_split_release_trigger,
+    create_split_release_trigger,
     split_release_gate,
 )
 
@@ -40,7 +40,7 @@ def _release(
     elapsed: int | None = SPLIT_ELAPSED,
     join_elapsed: int | None = JOIN_ELAPSED,
 ) -> None:
-    create_player_split_release_trigger(
+    create_split_release_trigger(
         SimpleNamespace(id=241),  # type: ignore[arg-type]
         package,  # type: ignore[arg-type]
         mission,
@@ -139,6 +139,33 @@ def test_a_split_no_later_than_the_join_is_not_gateable() -> None:
     assert split_release_gate(JOIN_ELAPSED, JOIN_ELAPSED - 1) is None
     assert split_release_gate(None, SPLIT_ELAPSED) is None
     assert split_release_gate(JOIN_ELAPSED, None) is None
+
+
+def test_an_ai_primary_gets_the_backstop_without_the_zone() -> None:
+    """Test 36 (2026-09-17): five escorts sat on their escort-hold anchors for
+    the whole mission because their AI primaries never reached SPLIT -- wedged
+    on a carrier deck or never spawned -- so nothing ever raised the flag. The
+    AI primary keeps its own RunScript as the normal release; this is only the
+    net under it, so no zone and no early release."""
+    mission = _mission()
+
+    create_split_release_trigger(
+        SimpleNamespace(id=241),  # type: ignore[arg-type]
+        object(),  # type: ignore[arg-type]
+        mission,
+        Point(1000, 2000, Caucasus()),
+        SPLIT_ELAPSED,
+        JOIN_ELAPSED,
+        zone_release=False,
+    )
+
+    (trigger,) = mission.triggerrules.triggers
+    assert not mission.triggers.zones()
+    rules = trigger.rules
+    assert len(rules) == 1
+    assert isinstance(rules[0], TimeAfter)
+    assert rules[0].seconds == SPLIT_ELAPSED + SPLIT_RELEASE_BACKSTOP_S
+    assert isinstance(trigger.actions[0], SetFlag)
 
 
 def test_one_package_never_stacks_two_release_triggers() -> None:

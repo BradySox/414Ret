@@ -271,8 +271,15 @@ off the display — §7's `hide_on_mfd` is, and it exempts MERAD on purpose.
 F-16C guide p223: with sequencing set to AUTO, "automatic sequencing will only
 be performed from steerpoints 1-20". The nav partition itself runs to 25.
 `MAX_ROUTE_STEERPOINTS = 20` now caps the flown route; support anchors fill
-21-25. A longer route loses its tail rather than shipping steerpoints the jet
+21-24. A longer route loses its tail rather than shipping steerpoints the jet
 will not advance to.
+
+**STPT 25 is the bullseye and must stay empty.** Guide p325: "The steerpoint
+normally used for Bullseye is steerpoint 25 and is automatically configured as
+such when a mission is loaded." `MAX_STEERPOINTS` was 25 until test 36, where the
+DED's STPT 25 read the mission's AWACS orbit anchor to the metre while the
+kneeboard's bullseye read Aleppo. The miz's own bullseye was correct -- §95 pins
+it -- and the cartridge was overwriting it. Now 24.
 
 ### Viper: the MPD upload can write CMDS
 
@@ -290,7 +297,7 @@ messages are the observable. Checklist **B28** carries the check.
 
 | Partition | Steerpoints | §74 |
 | --- | --- | --- |
-| Navigation | 1–25 | `STPT<n>`; route capped at 20, anchors 21–25 |
+| Navigation | 1–25 | `STPT<n>`; route capped at 20, anchors 21–24, **25 left to the jet's bullseye** |
 | Ownship markpoints | 26–30 | not emitted |
 | Geographic lines | 31–55 | `GEO_LINES{30+n}`, capped at 25 |
 | Pre-planned threats | 56–70 | `THREAT_PTS{55+n}`, capped at 15 |
@@ -562,7 +569,7 @@ leg above 25,000 ft writes 25,000 into the point and its real number into the
 route. Whether the jet itself would take a higher point elevation is unknown;
 the editor's own range is the only spec.
 
-**Also fixed alongside:** the Viper's orbit anchors (STPT 21-25) carried
+**Also fixed alongside:** the Viper's orbit anchors (STPT 21-24) carried
 `alt = 0` and read ELEV 0; they now carry the orbit's planned altitude
 (`SupportTrack.altitude_m`). Threat points' `elev` was 0; it is the ground
 estimate.
@@ -702,7 +709,7 @@ the descriptors.
 | The route as steerpoints | **Yes** — the miz flight plan | Hornet: names, per-leg ETA/speed, the target flag. Viper: TOS and leg speed inline, TGT/IP sub-types. Tomcat: nothing (plan 1 is the ME route; plan 2 repeats it with TOTs) |
 | Recovery TACAN / ICLS / ACLS | No | Hornet `NAV_SETTINGS` |
 | A/A waypoint on the bullseye, FPAS home | No | Hornet `NAV_SETTINGS` |
-| Own orbit, tanker/AWACS orbits | No (the F10 map has them; the cockpit does not) | Hornet `CAP_PTS`, Viper anchors 21–25, Tomcat references |
+| Own orbit, tanker/AWACS orbits | No (the F10 map has them; the cockpit does not) | Hornet `CAP_PTS`, Viper anchors 21–24, Tomcat references |
 | Front line | No | Hornet `FAOR_FLOT`, Viper `GEO_LINES`, Tomcat plot lines |
 | Confirmed SAM rings | Partly — the Hornet SA page draws MERAD sites natively (§7) | SHORAD/LORAD rings, and every ring on the Viper and Tomcat |
 | Recovery fields + the target's field | No | Viper `DEST` |
@@ -1105,7 +1112,7 @@ directly. They settle three open questions and found two defects in our own outp
 | Section | Campaign G | Us |
 |---|---|---|
 | `GEO_LINES` | one continuous 19-point line, 384 nm, on L1; a closed 5-point box on L2 | was 2 points per front, one front per line set |
-| `NAV_PTS` | empty — the route stays in the miz | route 1-20 plus support anchors 21-25 |
+| `NAV_PTS` | empty — the route stays in the miz | route 1-20 plus support anchors 21-24 |
 | `THREAT_PTS` | empty | up to 15 fogged rings |
 | `DEST` | 9 diverts with 3-character idents | same shape, same 81-99 partition |
 | `CMDS` | two authored manual programs | default OFF, same two programs |

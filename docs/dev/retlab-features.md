@@ -6724,26 +6724,46 @@ a suitable parking spot is free"* — which on a deck where nothing taxis is nev
 the 16 take a parking start; the catapults want "Takeoff from runway hot", which nothing
 here plans.
 
-`FlightGroupSpawner` now counts what it has put on each deck (`carrier_deck_use`, owned by
-`AircraftGenerator` so the count spans the whole ATO) and **air-starts the overflow**
-rather than handing it to DCS to lose — the same last resort the airfield path already
-takes on `NoParkingSlotError`, which the carrier branch could never reach because that
-retry is gated on `isinstance(cp, Airfield)`. **Client flights are never pushed off the
-boat**: a human has to be able to slot in where the briefing says, so they take their
-spots regardless and the AI behind them absorbs the move. `CARRIER_DECK_SPAWN_SPOTS = 16`.
+The overflow **starts airborne** over the boat rather than going to DCS to lose — the
+same last resort the airfield path takes on `NoParkingSlotError`, which the carrier branch
+could never reach because that retry is gated on `isinstance(cp, Airfield)`.
 
-Residual, and deliberately not modelled: the guide also says an F-14 blocks spots
-adjacent to it, so a Tomcat-heavy deck fills before 16. Test 36 stopped at 14 with eight
-Tomcats placed first, and test 9 took 24 Hornets on CVN-72 and launched them all, so the
-true number is a footprint problem, not a constant. pydcs geometry cannot express it
-(its `width` is folded/swept: the F-14 reads 10.15 m against the Hornet's 11.43). Sixteen
-is the cited figure and it removes the silent-vanish class; the last spot or two may still
-go to the hangar deck, which is what they did before.
+**Counted as it empties (2026-09-18).** The first fix counted every deck spawn in the
+mission against the 16, so after the first 16 everything started airborne however long the
+deck had been clear: brady turn 3 parked 15 of CVN-71's 53 and air-started the other 38,
+every BARCAP included. The deck does clear. Test 9 parked 24 over its mission, never more
+than 12 at once, and test 32 relaunched BARCAPs off the deck at +45 and +90 min; every jet
+in both launched. `aircraft/carrierdeck.py` now decides every carrier flight before any
+spawns:
 
-**Wiring**: `waypointgenerator.set_takeoff_time` split into the hold delay (the
-WaitingForStart remaining) and `needs_deck_placement_delay()` (carrier COLD/WARM ground
-starts; AI always, clients per policy); `should_activate_late` exempts client carrier
-COLD flights. `FlightGroupConfigurator` threads its `use_client` flag into
+- A flight holds its spots from the moment it spawns until `DECK_CLEARANCE` (5 min) past
+  its planned takeoff. A package parks only while the deck stays within both limits for
+  the whole of its stay.
+- The spawn moment is `SpawnTiming.spawn_delay()`, the same rules `set_takeoff_time`
+  builds its triggers from. A test holds the two to the same answer across the whole
+  trigger matrix.
+- **Packages stay whole**: a package's flights on one boat park together or start
+  airborne together.
+- **Client flights are never pushed off the boat.** They are placed first and the AI
+  absorbs the move; after that, first parked is first served.
+
+Brady turn 3 now parks 23 in seven waves from +00:01 to +19:31. The planner times all
+fifteen carrier packages inside those twenty minutes, so the deck cannot cycle further
+without moving TOTs, which the DM declined (2026-09-18).
+
+**At most four Tomcats parked at once** (`DECK_TOMCATS`). Test 36's jam was a Tomcat
+pile-up: eight F-14Bs spawned in its first two seconds and twelve inside three minutes, and
+three ever launched. Tests 9 and 32 never parked more than four together, and every jet
+launched, twelve at once included. The guide also says an F-14 blocks the spots beside it.
+The footprint itself is still not modelled — pydcs geometry cannot express it (its `width`
+is folded/swept: the F-14 reads 10.15 m against the Hornet's 11.43) — so four is the flown
+ceiling, not a derived one.
+
+**Wiring**: `SpawnTiming` (in `waypointgenerator.py`) holds the rules and
+`set_takeoff_time` asks it: the hold delay (`startup_delay`, the WaitingForStart
+remaining), `needs_deck_placement_delay()` (carrier COLD/WARM ground starts; AI always,
+clients per policy), `should_activate_late` (exempts client carrier COLD flights) and
+`spawn_delay()`, the moment the group appears, which the deck count reads. `FlightGroupConfigurator` threads its `use_client` flag into
 `WaypointGenerator` (the `multiplayer` param), consumed by `should_delay_flight` /
 `should_activate_late` for the single-player bypass. No plugin, no Lua, no miz-format
 change; `game/settings/settings.py` carries the enum + `_migrate_legacy_settings`
@@ -6754,8 +6774,10 @@ AI placement/push-time activation + the zero-hold floor, client placement under 
 policies, the delayed-client uncontrolled+StartCommand+placement combo, warm
 late-activation parity, airfield/runway no-ops, and the single-player matrix —
 cold/warm/runway late activation at the planned start time, the ten-minute rule, the
-MP + AI no-changes), `tests/missiongenerator/test_carrier_deck_capacity.py` (the deck
-ceiling, the client exemption, per-boat counting) and
+MP + AI no-changes, and the deck count's spawn moment against the triggers across all of
+it), `tests/missiongenerator/test_carrier_deck_capacity.py` (the deck counted over time,
+the clearance, whole packages, first-come order, the client exemption, the Tomcat limit,
+per-boat counting, which flights count) and
 `tests/settings/test_carrier_deck_policy.py` (default, boolean→enum migration both
 ways, never-stomp, UI visibility).
 

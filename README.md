@@ -136,8 +136,10 @@ Most of this is opt-in. Full list with toggles, defaults and known limitations:
   the shape you are looking at.
 - A flight only gets a tanker leg on its route when it needs the gas. A bomber that lands
   with most of its fuel no longer flies past its own field to a tanker first.
-- More aircraft than a carrier deck holds no longer vanish. The deck fills to its 16
-  parking spots and the rest start airborne; player flights always keep their deck spot.
+- A carrier launches in waves, and aircraft that do not fit no longer vanish. A package
+  parks only while the deck has room — at most 16 jets and 4 Tomcats at once, each jet
+  holding its spot until five minutes after its planned takeoff. A package that does not
+  fit starts airborne whole. Player flights always keep their deck spot.
 - The Payload tab shows the sortie's fuel plan live: planned burn, what the jet carries
   internally and in tanks, the RTB margin with no tanker, and how many tanker passes the
   route has. It flags a sortie that only gets home on a top-off, so you can add a bag or

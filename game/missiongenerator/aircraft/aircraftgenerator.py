@@ -53,6 +53,7 @@ from game.theater.controlpoint import (
 )
 from game.unitmap import UnitMap
 from .aircraftpainter import AircraftPainter
+from .carrierdeck import carrier_overflow
 from .liveryallocator import LiveryAllocator
 from .flightdata import FlightData
 from .flightgroupconfigurator import FlightGroupConfigurator
@@ -100,9 +101,9 @@ class AircraftGenerator:
         self.country_assigner = country_assigner
         self.modex_allocator = ModexAllocator(game)
         self.livery_allocator = LiveryAllocator()
-        #: Aircraft placed on each carrier deck so far, shared by every spawner
-        #: so the deck ceiling is counted across the whole ATO, not per flight.
-        self.carrier_deck_use: Dict[str, int] = {}
+        #: Carrier flights that start airborne because the deck is full while
+        #: they would be parked on it, decided per ATO before any flight spawns.
+        self.carrier_overflow: set[Flight] = set()
 
     @cached_property
     def use_client(self) -> bool:
@@ -160,6 +161,9 @@ class AircraftGenerator:
         """
         self._reserve_frequencies_and_tacan(ato)
         self.mission_data.packages.clear()
+        self.carrier_overflow |= carrier_overflow(
+            ato.packages, self.time, self.settings, self.use_client
+        )
 
         for package in reversed(self._prioritized_packages(ato)):
             logging.info(f"Generating package for target: {package.target.name}")
@@ -351,7 +355,7 @@ class AircraftGenerator:
                         self.ground_spawns_large,
                         self.ground_spawns,
                         self.mission_data,
-                        self.carrier_deck_use,
+                        self.carrier_overflow,
                     ).create_intercept_template(template_prefix)
                 except NoParkingSlotError:
                     logging.warning(
@@ -447,7 +451,7 @@ class AircraftGenerator:
                     self.ground_spawns_large,
                     self.ground_spawns,
                     self.mission_data,
-                    self.carrier_deck_use,
+                    self.carrier_overflow,
                 ).create_intercept_template(group_name)
             except Exception:
                 logging.warning(
@@ -503,7 +507,7 @@ class AircraftGenerator:
                 self.ground_spawns_large,
                 self.ground_spawns,
                 self.mission_data,
-                self.carrier_deck_use,
+                self.carrier_overflow,
             ).create_idle_aircraft()
             if group:
                 if (
@@ -537,7 +541,7 @@ class AircraftGenerator:
             self.ground_spawns_large,
             self.ground_spawns,
             self.mission_data,
-            self.carrier_deck_use,
+            self.carrier_overflow,
         ).create_flight_group()
 
         # Hornet/Tomcat squadrons wear sequenced board numbers (§62); tasked

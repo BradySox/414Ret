@@ -60,6 +60,136 @@ from .target import TargetBuilder
 MAX_HELO_ANCHOR_SPACING = nautical_miles(5)
 
 
+def is_tomcat(flight: Flight) -> bool:
+    return flight.unit_type.dcs_unit_type.id.startswith("F-14")
+
+
+class SpawnTiming:
+    """When a flight's group appears in the mission, and whether it holds to start.
+
+    set_takeoff_time turns these answers into triggers. The carrier deck count asks
+    the same questions first, so both agree on when a jet is parked (§64).
+    """
+
+    def __init__(
+        self, flight: Flight, time: datetime, settings: Settings, multiplayer: bool
+    ) -> None:
+        self.flight = flight
+        self.time = time
+        self.settings = settings
+        self.multiplayer = multiplayer
+
+    def startup_delay(self) -> timedelta:
+        """How long after mission start this flight is due to start up."""
+        if isinstance(self.flight.state, WaitingForStart):
+            return self.flight.state.time_remaining(self.time)
+        return timedelta()
+
+    def spawn_delay(self) -> timedelta:
+        """How long after mission start the group appears, as set_takeoff_time has it.
+
+        A late activation appears at its trigger; an uncontrolled cold start is in
+        the mission from the start and only holds its startup.
+        """
+        placement_delay = self.needs_deck_placement_delay()
+        placement = self.deck_placement_delay()
+        if self.should_delay_flight() or (
+            placement_delay and not self.flight.client_count
+        ):
+            if self.should_activate_late():
+                delay = self.startup_delay()
+                return max(delay, placement) if placement_delay else delay
+            if self.flight.start_type is StartType.COLD and placement_delay:
+                return placement
+            return timedelta()
+        if placement_delay:
+            return placement
+        return timedelta()
+
+    def needs_deck_placement_delay(self) -> bool:
+        """Whether this group must spawn at least a second after mission start.
+
+        https://github.com/dcs-liberation/dcs_liberation/issues/1309
+        The mission-start spawn wave fills the carrier six-pack first, which
+        sits in the taxi lane to the bow catapults: AI parked there deadlock
+        the deck, and a slow-starting player parked there jams every AI jet
+        taxiing to launch. Delaying a carrier deck spawn by one second causes
+        DCS to place the aircraft elsewhere on deck, so AI carrier ground
+        starts always take the delay, and player flights take it too under the
+        last-resort deck policy (the six-pack then only fills as overflow once
+        the rest of the deck is full).
+        """
+        if self.flight.state.in_flight:
+            return False
+        if self.flight.state.spawn_type not in (StartType.COLD, StartType.WARM):
+            return False
+        if not self.flight.departure.is_fleet:
+            return False
+        if not self.flight.client_count:
+            return True
+        return self.settings.carrier_deck_policy is CarrierDeckPolicy.LAST_RESORT
+
+    def deck_placement_delay(self) -> timedelta:
+        """How long after mission start a deck spawn is held for placement.
+
+        DCS hands out deck spots in spawn order, and the port-quarter pair is
+        the first it offers a Tomcat once the six-pack is closed (§64). Tomcats
+        spawn a second behind every other carrier group so the smaller jets
+        hold those two spots first; the DM does not want a Tomcat there.
+        """
+        if is_tomcat(self.flight):
+            return timedelta(seconds=2)
+        return timedelta(seconds=1)
+
+    def should_delay_flight(self) -> bool:
+        if not isinstance(self.flight.state, WaitingForStart):
+            return False
+
+        if not self.flight.client_count:
+            return True
+
+        if self.flight.state.time_remaining(self.time) < timedelta(minutes=10):
+            # Don't bother delaying client flights with short start delays. Much more
+            # than ten minutes starts to eat into fuel a bit more (especially for
+            # something fuel limited like a Harrier).
+            return False
+
+        if not self.multiplayer:
+            # "Spawn player flights immediately" exists to keep MP slots
+            # selectable from mission start. With fewer than two player slots
+            # there is no slot list to protect, so the lone player flight is
+            # delayed to its planned start time instead of idling from t=0.
+            return True
+
+        return not self.settings.never_delay_player_flights
+
+    def should_activate_late(self) -> bool:
+        if self.flight.start_type is not StartType.COLD:
+            # Avoid spawning aircraft in the air or on the runway until it's
+            # time for their mission. Also avoid burning through gas spawning
+            # hot aircraft hours before their takeoff time.
+            return True
+
+        if self.flight.client_count and not self.multiplayer:
+            # A delayed single-player cold start materializes at its planned
+            # startup time instead of spawning uncontrolled at mission start:
+            # there is no MP slot list to keep populated, and an uncontrolled
+            # spawn would leave the lone player idling in the pit from t=0.
+            return True
+
+        if self.flight.departure.is_fleet and not self.flight.client_count:
+            # AI carrier spawns will crowd the carrier deck, especially without
+            # super carrier, so only spawn them when needed. Client carrier
+            # flights instead spawn uncontrolled like their airfield
+            # counterparts (plus a one-second activation for six-pack
+            # placement) so their slots exist for players from the start of
+            # the mission rather than appearing only at the push time.
+            # Whether they all fit is carrierdeck.py's count.
+            return True
+
+        return False
+
+
 class WaypointGenerator:
     def __init__(
         self,
@@ -81,6 +211,7 @@ class WaypointGenerator:
         # slots. A single-player mission spawns its lone player flight at the
         # planned start time regardless of never_delay_player_flights.
         self.multiplayer = multiplayer
+        self.timing = SpawnTiming(flight, time, settings, multiplayer)
         #: Set by create_waypoints when no tanker can service this flight. The
         #: caller needs it too: a REFUEL waypoint is a fuel source to the bingo
         #: estimator, so a dropped one must leave that list as well.
@@ -554,18 +685,16 @@ class WaypointGenerator:
             previous = waypoint
 
     def set_takeoff_time(self, waypoint: FlightWaypoint) -> timedelta:
-        if isinstance(self.flight.state, WaitingForStart):
-            delay = self.flight.state.time_remaining(self.time)
-        else:
-            delay = timedelta()
+        timing = self.timing
+        delay = timing.startup_delay()
 
-        placement_delay = self.needs_deck_placement_delay()
-        placement = self.deck_placement_delay()
+        placement_delay = timing.needs_deck_placement_delay()
+        placement = timing.deck_placement_delay()
 
-        if self.should_delay_flight() or (
+        if timing.should_delay_flight() or (
             placement_delay and not self.flight.client_count
         ):
-            if self.should_activate_late():
+            if timing.should_activate_late():
                 # Late activation causes the aircraft to not be spawned
                 # until triggered. A late spawn is also automatically clear of
                 # the six-pack, but never activate a carrier group at exactly
@@ -594,41 +723,6 @@ class WaypointGenerator:
         # the player's kneeboard.
         waypoint.tot = self.flight.flight_plan.takeoff_time()
         return delay
-
-    def needs_deck_placement_delay(self) -> bool:
-        """Whether this group must spawn at least a second after mission start.
-
-        https://github.com/dcs-liberation/dcs_liberation/issues/1309
-        The mission-start spawn wave fills the carrier six-pack first, which
-        sits in the taxi lane to the bow catapults: AI parked there deadlock
-        the deck, and a slow-starting player parked there jams every AI jet
-        taxiing to launch. Delaying a carrier deck spawn by one second causes
-        DCS to place the aircraft elsewhere on deck, so AI carrier ground
-        starts always take the delay, and player flights take it too under the
-        last-resort deck policy (the six-pack then only fills as overflow once
-        the rest of the deck is full).
-        """
-        if self.flight.state.in_flight:
-            return False
-        if self.flight.state.spawn_type not in (StartType.COLD, StartType.WARM):
-            return False
-        if not self.flight.departure.is_fleet:
-            return False
-        if not self.flight.client_count:
-            return True
-        return self.settings.carrier_deck_policy is CarrierDeckPolicy.LAST_RESORT
-
-    def deck_placement_delay(self) -> timedelta:
-        """How long after mission start a deck spawn is held for placement.
-
-        DCS hands out deck spots in spawn order, and the port-quarter pair is
-        the first it offers a Tomcat once the six-pack is closed (§64). Tomcats
-        spawn a second behind every other carrier group so the smaller jets
-        hold those two spots first; the DM does not want a Tomcat there.
-        """
-        if self.flight.unit_type.dcs_unit_type.id.startswith("F-14"):
-            return timedelta(seconds=2)
-        return timedelta(seconds=1)
 
     def set_activation_time(self, delay: timedelta) -> None:
         # Note: Late activation causes the waypoint TOTs to look *weird* in the
@@ -670,51 +764,3 @@ class WaypointGenerator:
         self.group.add_trigger_action(StartCommand())
         activation_trigger.add_action(AITaskPush(self.group.id, len(self.group.tasks)))
         self.mission.triggerrules.triggers.append(activation_trigger)
-
-    def should_delay_flight(self) -> bool:
-        if not isinstance(self.flight.state, WaitingForStart):
-            return False
-
-        if not self.flight.client_count:
-            return True
-
-        if self.flight.state.time_remaining(self.time) < timedelta(minutes=10):
-            # Don't bother delaying client flights with short start delays. Much more
-            # than ten minutes starts to eat into fuel a bit more (especially for
-            # something fuel limited like a Harrier).
-            return False
-
-        if not self.multiplayer:
-            # "Spawn player flights immediately" exists to keep MP slots
-            # selectable from mission start. With fewer than two player slots
-            # there is no slot list to protect, so the lone player flight is
-            # delayed to its planned start time instead of idling from t=0.
-            return True
-
-        return not self.settings.never_delay_player_flights
-
-    def should_activate_late(self) -> bool:
-        if self.flight.start_type is not StartType.COLD:
-            # Avoid spawning aircraft in the air or on the runway until it's
-            # time for their mission. Also avoid burning through gas spawning
-            # hot aircraft hours before their takeoff time.
-            return True
-
-        if self.flight.client_count and not self.multiplayer:
-            # A delayed single-player cold start materializes at its planned
-            # startup time instead of spawning uncontrolled at mission start:
-            # there is no MP slot list to keep populated, and an uncontrolled
-            # spawn would leave the lone player idling in the pit from t=0.
-            return True
-
-        if self.flight.departure.is_fleet and not self.flight.client_count:
-            # AI carrier spawns will crowd the carrier deck, especially without
-            # super carrier, so only spawn them when needed. Client carrier
-            # flights instead spawn uncontrolled like their airfield
-            # counterparts (plus a one-second activation for six-pack
-            # placement) so their slots exist for players from the start of
-            # the mission rather than appearing only at the push time.
-            # TODO: Is there enough parking on the supercarrier?
-            return True
-
-        return False

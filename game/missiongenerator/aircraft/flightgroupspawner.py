@@ -1,6 +1,6 @@
 import logging
 import random
-from typing import Any, Union, Tuple, Optional, List
+from typing import AbstractSet, Any, Union, Tuple, Optional, List
 
 from dcs import Mission
 from dcs.country import Country
@@ -53,16 +53,6 @@ MINIMUM_MID_MISSION_SPAWN_ALTITUDE_AGL = feet(500)
 
 STACK_SEPARATION = feet(200)
 
-#: Deck spawn locations a carrier has at mission start. The DCS Supercarrier
-#: Operations Guide p100: "there are 20 possible aircraft spawn locations
-#: available: the 16 parking locations listed below and 1 on each catapult" --
-#: and only the 16 take a parking start, since the catapults are for "Takeoff
-#: from runway hot", which nothing here plans. Beyond them DCS hangar-decks the
-#: aircraft "until a suitable parking spot is free", which on a jammed deck is
-#: never: test 36 fragged 50 onto CVN-71, 33 of them never existed at all, and
-#: five shore-based escorts were stranded waiting on primaries that never flew.
-CARRIER_DECK_SPAWN_SPOTS = 16
-
 RTB_ALTITUDE = meters(800)
 RTB_DISTANCE = 5000
 HELI_ALT = 500
@@ -80,7 +70,7 @@ class FlightGroupSpawner:
         ground_spawns_large: dict[ControlPoint, list[Tuple[StaticGroup, Point]]],
         ground_spawns: dict[ControlPoint, list[Tuple[StaticGroup, Point]]],
         mission_data: MissionData,
-        carrier_deck_use: Optional[dict[str, int]] = None,
+        carrier_overflow: Optional[AbstractSet[Flight]] = None,
     ) -> None:
         self.flight = flight
         self.country = country
@@ -90,10 +80,9 @@ class FlightGroupSpawner:
         self.ground_spawns_large = ground_spawns_large
         self.ground_spawns = ground_spawns
         self.mission_data = mission_data
-        #: Aircraft already placed on each carrier deck this generation, keyed
-        #: by control point name. Shared across every flight by the caller; a
-        #: spawner with none of its own does not enforce the deck ceiling.
-        self.carrier_deck_use = carrier_deck_use if carrier_deck_use is not None else {}
+        #: Carrier flights with no deck spot while they would be parked
+        #: (carrierdeck.py). A spawner given none parks every carrier flight.
+        self.carrier_overflow = carrier_overflow or frozenset()
 
     def create_flight_group(self) -> FlyingGroup[Any]:
         """Creates the group for the flight and adds it to the mission.
@@ -281,21 +270,16 @@ class FlightGroupSpawner:
                         f"Carrier group {carrier_group} is a "
                         f"{carrier_group.__class__.__name__}, expected a ShipGroup"
                     )
-                if self._carrier_deck_is_full(cp):
+                if self.flight in self.carrier_overflow:
                     logging.warning(
-                        "%s deck is full (%d of %d spots used); air-starting %s "
-                        "%s instead of losing it to the hangar deck.",
+                        "%s deck is full while %s %s would be parked on it; "
+                        "air-starting it instead of losing it to the hangar deck.",
                         cp.name,
-                        self.carrier_deck_use.get(cp.name, 0),
-                        CARRIER_DECK_SPAWN_SPOTS,
                         self.flight.unit_type.display_name,
                         self.flight.flight_type.value,
                     )
                     self.flight.start_type = StartType.IN_FLIGHT
                     return self._generate_over_departure(name, cp)
-                self.carrier_deck_use[cp.name] = (
-                    self.carrier_deck_use.get(cp.name, 0) + self.flight.count
-                )
                 return self._generate_at_group(name, carrier_group)
             elif isinstance(cp, Fob):
                 is_heli = self.flight.squadron.aircraft.helicopter
@@ -505,18 +489,6 @@ class FlightGroupSpawner:
             callsign_name=self.flight.callsign.name if self.flight.callsign else None,
             callsign_nr=self.flight.callsign.nr if self.flight.callsign else None,
         )
-
-    def _carrier_deck_is_full(self, cp: ControlPoint) -> bool:
-        """True when this flight would have to wait on the hangar deck.
-
-        A client flight is never pushed off the boat -- a human must be able to
-        slot in where the briefing says -- but it still takes its spots, so the
-        AI behind it is what gets air-started.
-        """
-        if self.flight.client_count:
-            return False
-        used = self.carrier_deck_use.get(cp.name, 0)
-        return used + self.flight.count > CARRIER_DECK_SPAWN_SPOTS
 
     def _generate_over_departure(
         self, name: str, origin: ControlPoint

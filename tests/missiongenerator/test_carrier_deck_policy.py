@@ -27,13 +27,15 @@ that lever:
 
 from __future__ import annotations
 
+import itertools
 from datetime import datetime, timedelta
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, Callable
 
 from game.ato.flightstate import WaitingForStart
 from game.ato.starttype import StartType
 from game.missiongenerator.aircraft.waypoints.waypointgenerator import (
+    SpawnTiming,
     WaypointGenerator,
 )
 from game.settings import CarrierDeckPolicy, Settings
@@ -439,3 +441,46 @@ def test_airfield_tomcat_is_untouched() -> None:
     )
     assert not group.late_activation
     assert activation_delays(mission) == []
+
+
+def test_the_deck_count_sees_the_spawn_the_triggers_make() -> None:
+    """carrierdeck.py counts the deck off SpawnTiming.spawn_delay, so it has to be
+    the moment set_takeoff_time's triggers actually put the group in the mission."""
+    now = datetime(2026, 7, 16, 12, 0)
+    states: tuple[Callable[[StartType], Any], ...] = (
+        FakeGroundState,
+        lambda spawn: FakeWaiting(timedelta(minutes=5), spawn),
+        lambda spawn: FakeWaiting(timedelta(minutes=45), spawn),
+    )
+    for (
+        clients,
+        fleet,
+        state,
+        start,
+        policy,
+        multiplayer,
+        never_delay,
+        unit,
+    ) in itertools.product(
+        (0, 2),
+        (True, False),
+        states,
+        (StartType.COLD, StartType.WARM),
+        tuple(CarrierDeckPolicy),
+        (True, False),
+        (True, False),
+        ("FA-18C_hornet", "F-14B"),
+    ):
+        flight = make_flight(
+            client_count=clients,
+            is_fleet=fleet,
+            state=state(start),
+            start_type=start,
+            unit_id=unit,
+        )
+        settings = settings_with(policy, never_delay)
+        group, mission = run_set_takeoff_time(flight, settings, multiplayer)
+        appears = activation_delays(mission)[0] if group.late_activation else 0
+        predicted = SpawnTiming(flight, now, settings, multiplayer).spawn_delay()
+        case = (clients, fleet, flight.state, start, policy, multiplayer, never_delay)
+        assert predicted == timedelta(seconds=appears), case

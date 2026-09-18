@@ -297,7 +297,7 @@ stress it · `✗` fail signature reproduced in-game.
 | B123 | An Armed Recon flight engages a gun-defended target instead of overflying the search point | §35 | ☐ |
 | B124 | A hand-fragged Harrier DEAD opens the New Flight dialog on the DEAD preset, not a stock Snakeye fit | New Flight dialog | ✗ |
 | B125 | A dynamic-slot jet spawns with the template's route, radios and loadout | §101 | ☐ |
-| B127 | A crowded carrier deck launches everything it parks, and the rest start airborne | §64 | ☐ |
+| B127 | A carrier deck launches in waves, and what does not fit starts airborne | §64 | ☐ |
 | B128 | An escort comes home when its primary never flies | §8 | ☐ |
 | B129 | A flight with fuel to spare has no tanker leg | §46-adjacent | ☐ |
 | B130 | The Viper's STPT 25 is the bullseye the kneeboard names | §74 | ☐ |
@@ -7949,24 +7949,26 @@ group stays in the slot list, so the real flight is marked and there is no clone
   answer 1 and shrinks the feature to loadout and properties.
 
 
-### B127 — A crowded carrier deck launches everything it parks, and the rest start airborne · §64 · ☐ UNTESTED
+### B127 — A carrier deck launches in waves, and what does not fit starts airborne · §64 · ☐ UNTESTED
 
-The fix for test 36's silent loss of 33 carrier aircraft (see the test 36 section). The
-deck ceiling is the Supercarrier guide's 16 parking spots; the overflow air-starts rather
-than waiting on a hangar deck that never clears, and client flights are never moved.
+The fix for test 36's silent loss of 33 carrier aircraft (see the test 36 section),
+reworked 2026-09-18. The deck is counted as it empties: a flight holds its spots from
+spawning until 5 min past its planned takeoff, never more than 16 jets or 4 Tomcats are
+parked at once, a package parks or starts airborne whole, and client flights are never
+moved. The first version counted the whole mission against 16 and launched one wave.
 
-- **Setup:** a carrier campaign where the boat's squadrons can frag well past 16 airframes
-  in one turn — Long Road to H3 turn 2 did 50 — with at least one client flight on the
-  deck. Generate, open the miz, count the groups spawning at the carrier. ~15 min, plus a
-  fly if you want the launch half.
-- **Pass:** no more than 16 aircraft are parked on the boat at mission start; every flight
-  beyond that is in the air at its first waypoint; the client flight is on the deck; every
-  planned flight exists in the mission. In the fly: the parked flights all get airborne.
-- **Fail signatures:** a group in the ATO with no aircraft anywhere in the mission (the
-  old signature — check `state.json` for a record with two identical samples at the boat
-  and `alt = -1`); a client flight air-started; more than 16 on deck; aircraft parked on
-  deck that never taxi, which means 16 is still too many for that mix and the F-14
-  footprint rule needs modelling after all.
+- **Setup:** a carrier turn whose boat frags well past 16 airframes. Brady turn 3 (Long
+  Road to H3) generates 23 of CVN-71's 53 onto the deck in seven waves between +00:01 and
+  +19:31, and air-starts the rest. Generate, then fly or watch the first 25 minutes near
+  the boat. ~30 min.
+- **Pass:** every parked group taxis and launches, the later waves included — they spawn
+  onto a deck the earlier ones have left. The client flight is on the deck. Every planned
+  flight exists in the mission.
+- **Fail signatures:** a parked group that never taxis (note the types parked with it:
+  the Tomcat limit or the 5-minute clearance is too generous for that mix); a group in the
+  ATO with no aircraft anywhere in the mission (the test 36 signature — `state.json` holds
+  a record with two identical samples at the boat and `alt = -1`); an AI package with
+  flights both on the deck and airborne; a client flight air-started.
 
 ### B128 — An escort comes home when its primary never flies · §8 · ☐ UNTESTED
 

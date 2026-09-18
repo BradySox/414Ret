@@ -446,7 +446,7 @@ FEATURES: tuple[Feature, ...] = (
         # (which removed their slots from the MP slot list until the push time):
         # they spawn uncontrolled like their airfield counterparts, with the
         # StartCommand holding only the AI members to the planned push.
-        # waypointgenerator.set_takeoff_time / needs_deck_placement_delay.
+        # waypointgenerator.SpawnTiming; the deck count is aircraft/carrierdeck.py.
         "carrier_deck_policy",
         "Carrier deck spawn policy (six-pack last resort + MP slot timing)",
         64,

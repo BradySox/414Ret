@@ -232,6 +232,10 @@ Read before touching a campaign's `.yaml`, `.miz` or build tool.
   `retlab-dcs-olympus-notes.md`, `retlab-ui-redesign-directions.md` (+ `-mockups.html`),
   `retlab-juanjux-fork-watch-notes.md` (**the second fork we watch** — his adoption ledger,
   what is already ours, and the OPFOR-AI precedent for seam 7),
+  `retlab-fincenturion-dist-notes.md` (**study note, nothing adopted** — a third party's
+  tile ground war, graded per-side intel, PBEM and campaign editor, each measured against
+  what this tree already decided; the intel half contradicts the 2026-08-18 §3 call and the
+  editor is the blank-canvas feature we removed. Licence unknown: read, never vendor),
   `retlab-red-brain-phase0-notes.md` (**read before proposing anything about red** — seam 7
   framing 3 and its Phase 0; no headroom found, and the pre-registered card that would
   reopen it),

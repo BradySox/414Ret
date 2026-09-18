@@ -1619,14 +1619,65 @@ single target and states the constraint at the proposal instead:
   own receivers. A theater tanker has no receivers to infer from, so it has to say.
 - `PlanRefueling` counts the refuel methods the coalition's squadrons actually take, ordered by
   how many take each, and proposes one tanker per method.
-- **The first tanker stays unconstrained**, so a coalition whose aircraft declare no refuelling
-  method plans exactly what it planned before. Every further tanker is `optional`, so a wing
-  flying probe receivers without owning a drogue tanker still gets the boom tanker it can field
-  rather than losing the package. Never fewer than before, by construction.
+- **Every tanker is constrained to one method, the first included** (changed 2026-09-17, see
+  below). The first is mandatory, so a wing short of any tanker still places a purchase order;
+  every further one is `optional`, so a wing flying probe receivers without owning a drogue
+  tanker still gets the boom tanker it can field rather than losing the package. A method
+  counts only if a **land** tanker that dispenses it can actually be assigned to this station,
+  and the type asked for is the one **the planner itself ranks best** there
+  (`AirWing.best_squadrons_for`, the list the fill picks from) -- an untagged tanker passes
+  that filter but covers no method. When no method qualifies (nothing declares one, or no
+  fitting tanker can come) the single unconstrained tanker from before U15 is proposed. Never
+  fewer than before, by construction.
+- **Every tanker is ranked from the station.** Upstream's `PackageBuilder.plan_flight` ranks
+  every flight after the first from the primary flight's departure field, so a tanker's
+  escort launches near the tanker. A further tanker only exists because of U15 and serves the
+  station, so a REFUELING flight in a REFUELING-led package keeps `package.target`; escorts
+  are unchanged.
 - `theaterrefueling.py` steps each further tanker `TANKER_ORBIT_SPACING` (15 NM) back from the
   threat. Without it both tankers get the same racetrack at the same altitude.
 
-Tests: `tests/commander/test_theater_tanker_methods.py` (10). In-game row **B76**.
+Tests: `tests/commander/test_theater_tanker_methods.py` (20),
+`tests/commander/test_packagebuilder_tanker_location.py` (2). In-game row **B76**.
+
+**2026-09-17 — the first tanker took the wrong method, and the second repeated it.** Found by
+an adversarial review of the AWACS-anchor fix and reproduced on two real saves (Long Road to
+H3, `autosave` turn 1 and `brady` turn 3): blue's land station got **two boom KC-135s and no
+probe tanker** -- B76's fail signature word for word. The wing counts probe 8 / boom 3, so
+`needed_refuel_methods` is `[probe, boom]`. The first tanker was left unconstrained on
+purpose and took the wing's best squadron, which was the boom KC-135; the loop then proposed
+`needed[1:]`, i.e. boom again, and the same squadron filled it. The loop assumed the free
+first pick had covered `needed[0]`; nothing made it. The KC-135 MPRS (probe, two untasked at
+Incirlik) was never asked for, so the land-based probe receivers -- the Mirage 2000Cs of
+Escadron de chasse 1/30 -- had no land tanker. (Seven of the eight probe squadrons sit on
+CVN-71 / LHA-1, which the carrier's own station covers.)
+
+The first tanker is now constrained to the most-needed method too. Constraining it to
+`needed[0]` alone would have been wrong: it is the mandatory flight, so a probe tanker that
+exists but cannot reach the station would scrub a package that fills today. Hence the
+assignability test above. The same fix stops a mixed wing with a single boom squadron being
+asked for boom twice. Replayed read-only through the full planner on both saves: land
+station **KC-135 boom + KC-135 boom → KC-135 boom + KC-135 MPRS probe**; the carrier's A-6E
+station is unchanged. The regression test fails on the old code and passes on the new.
+
+**Two more defects, found by an adversarial review of that fix before it shipped**, both
+introduced by pinning the first tanker:
+- The type came from the first match in **wing order**, not the planner's ranking. Reproduced
+  as a direct regression on a single-method wing: with a KC-10 added at the station, the old
+  code flew it from 0 NM and the pinned version a KC-135 from 160 NM. Now taken from the
+  ranking.
+- The second tanker was **ranked from the first one's field**, because of the upstream escort
+  rule above. On `Vietnam tes` the probe KC-130 comes from Maykop, 134 NM out (the wing's only
+  land probe tanker), and the boom KC-135 was then picked from Krymsk, **223 NM** out, while
+  the station's own KC-135 sat at 0 NM. The unit-test fake ignored location, which is why the
+  tests passed; `tests/commander/test_packagebuilder_tanker_location.py` now pins it.
+
+Replayed read-only, origin/main in full vs the fix, **all 8 saves x both sides** (16 cases):
+12 unchanged -- every red side among them -- and 4 blue changed, each from two boom tankers to
+boom + probe (`autosave`, `brady`, `Vietnam tes`, and Red Tide's `test`). The bug was live on
+every save with a mixed wing and a land probe tanker. No package lost, no method duplicated,
+no boat's tanker pulled ashore, and on `Vietnam tes` the boom tanker now launches from the
+station at 0 NM.
 
 One defect found writing it: the orbit slot used `list.index`, which matches the first flight
 that compares *equal* rather than the flight itself. Two tankers would have shared a slot the

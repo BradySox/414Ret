@@ -304,70 +304,122 @@ class ObjectiveFinder:
             raise RuntimeError("Found no friendly control points. You probably lost.")
         return farthest
 
+    def _land_support_candidates(self) -> Iterator[ControlPoint]:
+        """Friendly control points a support orbit may be anchored ashore on.
+
+        ``is_fleet``, not ``is_carrier``: ``Lha`` never overrides ``is_carrier``,
+        so the old filter let an LHA through as a land anchor. Test 36 put the
+        "land" AWACS on LHA-1 Tarawa, 3.29 NM from CVN-71, and the carrier's one
+        E-2C squadron flew two overlapping racetracks 14.9 NM apart.
+        """
+        for cp in self.friendly_control_points():
+            if isinstance(cp, OffMapSpawn) or cp.is_fleet:
+                continue
+            yield cp
+
+    def _support_anchor_rank(
+        self, cp: ControlPoint, *, forward: bool
+    ) -> tuple[int, float]:
+        """Sort key for a support anchor; lowest wins.
+
+        ``distance_to_threat`` is unsigned -- distance to the nearest zone edge,
+        which inside the zone is how DEEP the field sits, not how far clear. The
+        old pick treated the two alike, so with every field threatened "farthest
+        from threats" chose the one deepest inside the enemy zone. An unthreatened
+        field always beats a threatened one; among threatened fields none is safe,
+        so the shallowest wins whichever way the caller leans.
+        """
+        threat_zones = self.game.threat_zone_for(self.is_player.opponent)
+        distance = threat_zones.distance_to_threat(cp.position).meters
+        if threat_zones.threatened(cp.position):
+            return 1, distance
+        return 0, distance if forward else -distance
+
     def _support_hosting_anchor(
         self, task: FlightType, *, forward: bool
     ) -> ControlPoint | None:
-        """The unthreatened land CP hosting a usable `task` squadron, rear or forward.
+        """The land CP hosting a usable `task` squadron, rear or forward.
 
         Shared by the AEW&C and tanker anchors. A support orbit is laid out relative
         to whatever this returns, and the squadron that flies it is chosen
         separately, so an anchor picked without asking where those aircraft actually
         live sends them across the theater to orbit beside a field they did not come
-        from. None when no unthreatened field hosts one -- each caller then falls
-        back to its own stock pick, so an all-carrier wing still anchors sanely.
+        from. A threatened host is used only when EVERY land field is threatened --
+        test 36 had all four blue fields inside red's zone and skipped Incirlik, whose
+        E-3A sat untasked. While any field is clear the old behaviour stands: the
+        threatened host is skipped and the caller falls back to the clear field. That
+        fallback is not guaranteed a clear orbit either -- a field 13 NM from the zone
+        lays its orbit inside it -- so the rule only changes the case the old code got
+        worst. None when nothing qualifies.
         """
         threat_zones = self.game.threat_zone_for(self.is_player.opponent)
-        best: ControlPoint | None = None
-        best_distance = meters(0)
-        for cp in self.friendly_control_points():
-            if isinstance(cp, OffMapSpawn) or cp.is_carrier:
-                continue
-            if threat_zones.threatened(cp.position):
-                continue
-            if not any(
+        candidates = list(self._land_support_candidates())
+        every_field_threatened = all(
+            threat_zones.threatened(cp.position) for cp in candidates
+        )
+        hosts = [
+            cp
+            for cp in candidates
+            if (every_field_threatened or not threat_zones.threatened(cp.position))
+            and any(
                 squadron.capable_of(task) and squadron.untasked_aircraft > 0
                 for squadron in cp.squadrons
-            ):
-                continue
-            distance = threat_zones.distance_to_threat(cp.position)
-            closer = distance < best_distance if forward else distance > best_distance
-            if best is None or closer:
-                best, best_distance = cp, distance
-        return best
+            )
+        ]
+        if not hosts:
+            return None
+        return min(hosts, key=lambda cp: self._support_anchor_rank(cp, forward=forward))
+
+    def _land_support_fallback(self, *, forward: bool) -> ControlPoint | None:
+        """The stock rear or forward pick, restricted to land. None if there is none.
+
+        What an anchor falls back to when no land field hosts the squadron. The old
+        fallbacks were the generic nearest/farthest-CP picks, which filter nothing
+        but off-map spawns and so could hand back a ship. A wing with no land field
+        returns None and gets its per-carrier stations only, instead of a phantom
+        land station planted on one of its own boats. An off-map spawn is not a
+        station either, so a tanker based only off-map still gets none -- as before.
+        """
+        candidates = list(self._land_support_candidates())
+        if not candidates:
+            return None
+        return min(
+            candidates, key=lambda cp: self._support_anchor_rank(cp, forward=forward)
+        )
 
     def _aewc_hosting_anchor(self, *, forward: bool) -> ControlPoint | None:
         return self._support_hosting_anchor(FlightType.AEWC, forward=forward)
 
-    def tanker_land_anchor(self) -> ControlPoint:
+    def tanker_land_anchor(self) -> ControlPoint | None:
         """The land tanker station: the most forward field that hosts a tanker.
 
         The stock pick is the CP nearest the enemy and asks nothing about basing,
         so on a flown Caucasus turn the station landed on a sector HQ with the
         KC-135 **103 NM** away and a carrier A-6E dragged **226 NM** to reach it
         (test.retribution turn 2, 2026-08-19). Forward like the stock pick, but
-        among the fields that can actually put a tanker there; stock pick when
-        none can.
+        among the fields that can actually put a tanker there; the most forward
+        land field when none can, and None when there is no land field at all.
         """
-        return self._support_hosting_anchor(FlightType.REFUELING, forward=True) or (
-            self.closest_friendly_control_point()
-        )
+        return self._support_hosting_anchor(
+            FlightType.REFUELING, forward=True
+        ) or self._land_support_fallback(forward=True)
 
-    def aewc_land_anchor(self) -> ControlPoint:
+    def aewc_land_anchor(self) -> ControlPoint | None:
         """The rear-safe land AEW&C anchor, biased to a field that hosts an AWACS.
 
         The orbit is laid out relative to this CP, so a pick made purely on
         distance-from-threat can strand the wing's only AWACS across the theater:
         the flown Sinai plan took a rear field 1.1 NM safer than the one the single
         E-3A actually flew from, and sent it 245 NM to orbit beside a third field
-        (brady.retribution, 2026-08-17). Falls back to the stock rear pick when no
-        unthreatened friendly field hosts an AEW&C squadron, so an all-carrier wing
-        still anchors somewhere sane.
+        (brady.retribution, 2026-08-17). Falls back to the rearmost land field when
+        none hosts an AEW&C squadron, and to None when there is no land field, so an
+        all-carrier wing gets its per-carrier orbits and no phantom land one.
         """
-        return self._aewc_hosting_anchor(forward=False) or (
-            self.farthest_friendly_control_point()
+        return self._aewc_hosting_anchor(forward=False) or self._land_support_fallback(
+            forward=False
         )
 
-    def forward_aewc_land_anchor(self) -> ControlPoint:
+    def forward_aewc_land_anchor(self) -> ControlPoint | None:
         """The front-less land AEW&C anchor: the most forward field hosting an AWACS.
 
         With no front line the orbit holds at its target, so the rear pick parks the
@@ -377,8 +429,8 @@ class ObjectiveFinder:
         at Akrotiri **164 NM away** and flew that each way to reach the orbit
         (test 9, 2026-08-18). Same rule as the rear anchor, forward instead of back.
         """
-        return self._aewc_hosting_anchor(forward=True) or (
-            self.closest_friendly_control_point()
+        return self._aewc_hosting_anchor(forward=True) or self._land_support_fallback(
+            forward=True
         )
 
     def closest_friendly_control_point(self) -> ControlPoint:

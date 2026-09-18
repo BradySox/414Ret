@@ -161,6 +161,41 @@ packages. Details in the features doc.
 The rest of the ungated reverts stay reverted. This amendment is the authority for U15 only; do
 not read it as re-opening §6 or §46.
 
+### Amendment 2026-09-17 — AEW&C station spacing, ungated (replaces U30's AEW&C half)
+
+**Two AEW&C on one station are spaced again, by stepping back from the threat.** Fresh DM
+call. **U29 (front anchoring) stays reverted, and U30's sideways spread is NOT restored.**
+
+The DM first asked for the August 60 NM same-target sideways spread back. Reviewed against
+the real saves before it shipped, it failed its one remaining job: once the target list
+dedupes, the planner never puts two AWACS on one station, so the spread only fires on a
+hand-fragged second AWACS -- and there the first, laid out alone and never again, stayed put
+while the newcomer moved 30 NM, leaving two 60 NM tracks sharing 30 NM of line. It also
+shifted sideways with no threat check (8 of 101 track samples inside red's zone on
+`brady.retribution`) and put adjacent tracks on a shared turn point. The DM then chose the
+tanker's post-revert pattern instead: each further AWACS on a station steps
+`AEWC_ORBIT_SPACING` (20 NM) back from the threat, taking the nearest step clear of
+where the AWACS already on that station actually orbit. A first version counted the AWACS
+ahead of it in ATO order instead; a second review found that collided whenever an AWACS was
+added to an earlier package or one was deleted and another fragged, because plans already
+laid out never move -- so the slot is now tested against real positions. JAMMING shares the
+builder and never takes part.
+
+**The tanker's own step was fixed alongside.** `TANKER_ORBIT_SPACING` always subtracted,
+which is "back" only for a clear anchor; a threatened anchor's orbit sits past the zone edge,
+so subtracting walked each extra tanker back toward it (70 → 55 NM on `autosave.retribution`,
+now 70 → 85). Both builders call `patrolling.step_back_from_threat`.
+
+**Landing alongside it, ungated because it is a bug, not fork behavior:** the land support
+anchor could be a ship. `_support_hosting_anchor` excluded `is_carrier`, which `Lha` never
+overrides, and both fallbacks filtered only off-map spawns. On a turn with every blue field
+threatened, the "land" AWACS anchored on LHA-1 Tarawa, 3.29 NM from CVN-71. Now land-only
+(`is_fleet`); a threatened host is taken only when EVERY land field is threatened, ranked by
+how shallow it sits; and a repeated target is never planned twice. That is not U29 --
+nothing consults a front line -- so it does not re-open §6. In-game row B131.
+
+This amendment is the authority for AEW&C station spacing and the tanker step direction only.
+
 ## Levers, if pulling back (superseded by the decision above; kept for the record)
 
 1. "Stock planner" settings preset (the §28 preset machinery exists): flips the whole default-ON table above in one click. Can't touch the ungated items.

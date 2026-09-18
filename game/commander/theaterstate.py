@@ -343,18 +343,18 @@ def _refueling_targets(finder: ObjectiveFinder) -> list[MissionTarget]:
     targets: list[MissionTarget] = [
         cp for cp in finder.friendly_control_points() if cp.is_carrier
     ]
-    targets.append(finder.tanker_land_anchor())
+    _append_land_anchor(targets, finder.tanker_land_anchor())
     return targets
 
 
 def _aewc_targets(finder: ObjectiveFinder) -> list[MissionTarget]:
     """One AEW&C target per friendly carrier, plus one land anchor.
 
-    With an active front the land anchor is the CP farthest from threats (the
-    stock rear-safe pick -- the support-orbit geometry then places the orbit
-    relative to the FLOT regardless of the target). With NO front the orbit
-    deliberately HOLDS at its target (there is no "behind the FLOT" to march
-    to), so the rear pick parks the AWACS out of the war entirely -- the flown
+    With an active front the land anchor is the rear-safe field hosting an
+    AWACS, and the orbit is laid out relative to it -- the FLOT-anchored
+    placement that used to override the target was reverted to upstream on
+    2026-08-09 (§6, work order D). With NO front the orbit HOLDS at its target,
+    so the rear pick would park the AWACS out of the war entirely -- the flown
     red A-50 orbited its rearmost home base 424 NM from the enemy fleet
     (2026-07-17 Scenic Route Merged; third campaign showing it). On a
     front-less theater the anchor is instead the friendly CP NEAREST the
@@ -366,7 +366,23 @@ def _aewc_targets(finder: ObjectiveFinder) -> list[MissionTarget]:
         cp for cp in finder.friendly_control_points() if cp.is_carrier
     ]
     if any(True for _ in finder.front_lines()):
-        targets.append(finder.aewc_land_anchor())
+        _append_land_anchor(targets, finder.aewc_land_anchor())
     else:
-        targets.append(finder.forward_aewc_land_anchor())
+        _append_land_anchor(targets, finder.forward_aewc_land_anchor())
     return targets
+
+
+def _append_land_anchor(
+    targets: list[MissionTarget], anchor: MissionTarget | None
+) -> None:
+    """Add the land station unless there is none or it is already a target.
+
+    The planner consumes a target list one entry at a time and never dedupes it,
+    so a repeat plans a second package on the identical anchor and flies a
+    byte-identical racetrack. Latent, not flown: on brady.retribution turn 3 the old
+    fallback returned CVN-71, already a carrier target, and only the hosting walk
+    finding Incirlik first kept it out. None means the wing has no land field.
+    """
+    if anchor is None or any(anchor is target for target in targets):
+        return
+    targets.append(anchor)

@@ -37,6 +37,19 @@ class PatrollingLayout(StandardLayout):
 LayoutT = TypeVar("LayoutT", bound=PatrollingLayout)
 
 
+def step_back_from_threat(
+    orbit_distance: Distance, *, threatened: bool, step: Distance
+) -> Distance:
+    """Move a support orbit's centre `step` further from the threat.
+
+    The centre lies on the line from the anchor toward the nearest threat edge. A
+    clear anchor puts it short of the edge, so back is toward the anchor; a
+    threatened anchor puts it past the edge, so back is further past. Subtracting in
+    both cases walked a threatened anchor's extra orbits toward the zone.
+    """
+    return orbit_distance + step if threatened else orbit_distance - step
+
+
 class PatrollingFlightPlan(StandardFlightPlan[LayoutT], UiZoneDisplay, ABC):
     @property
     @abstractmethod

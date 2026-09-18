@@ -5,7 +5,7 @@ from typing import Type
 from game.ato.flighttype import FlightType
 from game.utils import Heading, meters, nautical_miles
 from .ibuilder import IBuilder
-from .patrolling import PatrollingLayout
+from .patrolling import PatrollingLayout, step_back_from_threat
 from .refuelingflightplan import RefuelingFlightPlan
 from .waypointbuilder import WaypointBuilder
 
@@ -57,15 +57,21 @@ class Builder(IBuilder[TheaterRefuelingFlightPlan, PatrollingLayout]):
         threat_buffer = nautical_miles(
             self.coalition.game.settings.tanker_threat_buffer_min_distance
         )
-        if self.threat_zones.threatened(location.position):
+        threatened = self.threat_zones.threatened(location.position)
+        if threatened:
             orbit_distance = distance_to_threat + threat_buffer
         else:
             orbit_distance = distance_to_threat - threat_buffer
 
         # Each further tanker sits another step back from the threat. Backwards
         # rather than forwards so an extra tanker can never be pushed into the
-        # threat zone the buffer above just cleared.
-        orbit_distance -= TANKER_ORBIT_SPACING * self._orbit_index()
+        # threat zone the buffer above just cleared -- which for a threatened
+        # anchor means further past the edge, not back toward it.
+        orbit_distance = step_back_from_threat(
+            orbit_distance,
+            threatened=threatened,
+            step=TANKER_ORBIT_SPACING * self._orbit_index(),
+        )
 
         racetrack_center = location.position.point_from_heading(
             orbit_heading.degrees, orbit_distance.meters

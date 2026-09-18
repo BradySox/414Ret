@@ -11,7 +11,7 @@ from dcs.task import (
 
 from game.ato import FlightType
 from game.utils import knots
-from ._helper import create_player_split_release_trigger
+from ._helper import create_split_release_trigger
 from .pydcswaypointbuilder import PydcsWaypointBuilder
 
 
@@ -45,19 +45,20 @@ class SplitPointBuilder(PydcsWaypointBuilder):
                 f'trigger.action.setUserFlag("split-{id(self.package)}", true)'
             )
             waypoint.tasks.append(script)
-            if self.flight.client_count > 0:
-                # A client-occupied group never runs its route tasks, so the
-                # script above is dead weight when the human leads the package.
-                # See create_player_split_release_trigger.
-                plan = self.flight.flight_plan
-                create_player_split_release_trigger(
-                    self.group,
-                    self.package,
-                    self.mission,
-                    self.waypoint.position,
-                    self._elapsed(self.waypoint.tot),
-                    self._elapsed(plan.join_time if plan.is_formation(plan) else None),
-                )
+            # The script above is the normal path and it is not enough on its
+            # own: a client-occupied group never runs its route tasks, and an AI
+            # primary that never reaches SPLIT strands its escorts forever. The
+            # zone half is for the human only. See create_split_release_trigger.
+            plan = self.flight.flight_plan
+            create_split_release_trigger(
+                self.group,
+                self.package,
+                self.mission,
+                self.waypoint.position,
+                self._elapsed(self.waypoint.tot),
+                self._elapsed(plan.join_time if plan.is_formation(plan) else None),
+                zone_release=self.flight.client_count > 0,
+            )
 
         elif self.flight.flight_type in [
             FlightType.SEAD_SWEEP,

@@ -587,6 +587,44 @@ def test_viper_route_stops_at_the_auto_sequencing_limit() -> None:
     assert nav_pts[-1]["number"] == 21
 
 
+def test_viper_never_writes_the_bullseye_steerpoint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """STPT 25 is the jet's bullseye, configured from the miz on load (EA guide
+    p325). Test 36 wrote the AWACS anchor there and every bullseye readout
+    pointed at the orbit instead of Aleppo, so the anchors stop at 24."""
+    from dcs.mapping import Point
+
+    flight, mission_data, game = _hornet_fixture()
+    flight.aircraft_type = _aircraft("F-16C_50")
+    flight.waypoints = [
+        _waypoint("TAKEOFF", FlightWaypointType.TAKEOFF, 0, 0, 0, None)
+    ] + [
+        _waypoint(f"NAV{i}", FlightWaypointType.NAV, i * 100, i * 100, 3000, None)
+        for i in range(1, 25)
+    ]
+    theater = game.theater
+    monkeypatch.setattr(
+        "game.missiongenerator.dtc.viper.support_tracks",
+        lambda _md: [
+            SupportTrack(
+                callsign=f"TKR{n}",
+                kind="TKR",
+                start=Point(float(n * 1000), 0.0, theater.terrain),
+                end=Point(float(n * 1000), 5000.0, theater.terrain),
+                altitude_m=6000.0,
+            )
+            for n in range(10)
+        ],
+    )
+    data = json.loads(build_viper_cartridge(flight, mission_data, game, "V").to_json())[
+        "data"
+    ]
+    numbers = [p["number"] for p in data["MPD"]["NAV_PTS"]]
+    assert numbers == list(range(1, 25))
+    assert 25 not in numbers
+
+
 def test_viper_geo_lines_stay_inside_their_partition(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

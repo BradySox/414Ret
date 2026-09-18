@@ -100,6 +100,9 @@ class AircraftGenerator:
         self.country_assigner = country_assigner
         self.modex_allocator = ModexAllocator(game)
         self.livery_allocator = LiveryAllocator()
+        #: Aircraft placed on each carrier deck so far, shared by every spawner
+        #: so the deck ceiling is counted across the whole ATO, not per flight.
+        self.carrier_deck_use: Dict[str, int] = {}
 
     @cached_property
     def use_client(self) -> bool:
@@ -348,6 +351,7 @@ class AircraftGenerator:
                         self.ground_spawns_large,
                         self.ground_spawns,
                         self.mission_data,
+                        self.carrier_deck_use,
                     ).create_intercept_template(template_prefix)
                 except NoParkingSlotError:
                     logging.warning(
@@ -443,6 +447,7 @@ class AircraftGenerator:
                     self.ground_spawns_large,
                     self.ground_spawns,
                     self.mission_data,
+                    self.carrier_deck_use,
                 ).create_intercept_template(group_name)
             except Exception:
                 logging.warning(
@@ -498,6 +503,7 @@ class AircraftGenerator:
                 self.ground_spawns_large,
                 self.ground_spawns,
                 self.mission_data,
+                self.carrier_deck_use,
             ).create_idle_aircraft()
             if group:
                 if (
@@ -531,6 +537,7 @@ class AircraftGenerator:
             self.ground_spawns_large,
             self.ground_spawns,
             self.mission_data,
+            self.carrier_deck_use,
         ).create_flight_group()
 
         # Hornet/Tomcat squadrons wear sequenced board numbers (§62); tasked

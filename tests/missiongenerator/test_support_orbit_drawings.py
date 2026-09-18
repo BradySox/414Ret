@@ -17,8 +17,12 @@ from dcs.terrain import Caucasus
 
 from game.ato.flighttype import FlightType
 from game.ato.flightwaypointtype import FlightWaypointType
-from game.missiongenerator.drawingsgenerator import DrawingsGenerator
+from game.missiongenerator.drawingsgenerator import (
+    SUPPORT_ORBIT_MIN_RADIUS_M,
+    DrawingsGenerator,
+)
 from game.theater.player import Player
+from game.utils import knots
 
 _XY = tuple[float, float]
 
@@ -108,6 +112,35 @@ def test_awacs_orbit_drawn_without_tacan() -> None:
     label = next(o for o in _objects(m) if o.name == "MAGIC label")
     assert "MAGIC" in label.text and "252.0" in label.text
     assert "TCN" not in label.text
+
+
+def test_the_box_widens_with_the_orbit_speed() -> None:
+    """A 2 NM capsule left the KC-135s 17-19 km outside their own box on test
+    36. The half-width now comes from the flight's orbit speed, so a fast
+    tanker gets a fat box and a slow Hawkeye a slim one -- never below 2 NM."""
+    m = Mission(Caucasus())
+
+    def radius(patrol_speed: Any) -> float:
+        flight = _flight(
+            m.terrain,
+            flight_type=FlightType.REFUELING,
+            coalition=Player.BLUE,
+            callsign="ARCO",
+            group="Tanker 1",
+            start=(0.0, 0.0),
+            end=(40000.0, 0.0),
+            type_name="KC-135",
+        )
+        flight.patrol_speed = patrol_speed
+        return DrawingsGenerator._support_orbit_radius(flight)
+
+    fast = radius(knots(413))  # the test 36 KC-135
+    slow = radius(knots(251))  # the test 36 E-2C
+    assert fast > slow > SUPPORT_ORBIT_MIN_RADIUS_M
+    # Both must clear what those two actually flew off the leg centreline.
+    assert fast >= 17700.0
+    assert slow >= 8900.0
+    assert radius(None) == SUPPORT_ORBIT_MIN_RADIUS_M
 
 
 def test_non_support_and_enemy_flights_are_skipped() -> None:

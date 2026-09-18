@@ -96,12 +96,14 @@ class WaypointGenerator:
         self.repair_ground_level_altitudes()
 
         # The plan asks for a refuel waypoint whenever the coalition owns a
-        # tanker-capable squadron ANYWHERE in theater -- deliberately, since
-        # gating it on fuel need is what the reverted §46 did -- and puts it at a
-        # point derived from the route alone, never from a tanker. Resolve it
-        # here (generation, not planning) so §46's decision stays untouched:
-        # onto a real orbit when one can serve this flight, gone when none can.
-        drop_refuel = False
+        # tanker-capable squadron ANYWHERE in theater, and puts it at a point
+        # derived from the route alone, never from a tanker. Resolve it here
+        # (generation, not planning, so the planner's timing is untouched):
+        # onto a real orbit when one can serve this flight, gone when none can
+        # or when the jet gets home without it.
+        drop_refuel = self.gets_home_without_the_tanker()
+        if drop_refuel:
+            self.refuel_dropped = True
         for point in self.flight.points:
             if point.waypoint_type is not FlightWaypointType.REFUEL:
                 continue
@@ -397,6 +399,45 @@ class WaypointGenerator:
         return refuel_rendezvous(
             self.flight.unit_type, self.flight.blue.is_blue, planned, tankers
         )
+
+    #: Landing reserves the dry margin must clear before a refuel waypoint is
+    #: dropped as unearned. Measured data gets 2x the airframe's own min-safe;
+    #: a synthesised model gets 3x, because the number is a guess and the cost
+    #: of being wrong is a flight that does not reach its field.
+    REFUEL_DROP_RESERVES_MEASURED = 2.0
+    REFUEL_DROP_RESERVES_ESTIMATED = 3.0
+
+    def gets_home_without_the_tanker(self) -> bool:
+        """True when the planned sortie lands with fuel to spare, never plugging in.
+
+        The refuel waypoint is not a fuel-need test at planning time, so a B-1B
+        with 89% of its fuel left flew 66 km PAST its own field to a tanker it
+        did not need and was still out there at mission end (test 36). The dry
+        margin is the burn with no top-off applied, so a flight that clears the
+        bar never needed the gas; and dropping the waypoint only shortens the
+        route, so the margin after the drop can only be larger than the one
+        tested here.
+        """
+        from game.retlab.fuel_brief import fuel_brief_for
+
+        if not any(
+            point.waypoint_type is FlightWaypointType.REFUEL
+            for point in self.flight.points
+        ):
+            # Nothing to drop; skip the fuel walk for the flights that are the
+            # majority of any ATO.
+            return False
+        brief = fuel_brief_for(self.flight)
+        if brief is None or not brief.refuel_passes:
+            # No fuel model for the airframe, or nothing to drop. Leave the
+            # planner's decision alone rather than guess.
+            return False
+        reserves = (
+            self.REFUEL_DROP_RESERVES_ESTIMATED
+            if brief.estimated
+            else self.REFUEL_DROP_RESERVES_MEASURED
+        )
+        return brief.dry_margin_lbs >= brief.reserve_lbs * reserves
 
     def builder_for_waypoint(self, waypoint: FlightWaypoint) -> PydcsWaypointBuilder:
         builders = {

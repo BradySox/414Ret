@@ -35,8 +35,18 @@ SUPPORT_ORBIT_LINE = Rgba(0, 200, 255, 255)
 SUPPORT_ORBIT_FILL = Rgba(0, 200, 255, 55)
 SUPPORT_LABEL_TEXT = Rgba(0, 190, 255, 255)
 SUPPORT_LABEL_FILL = Rgba(0, 30, 45, 150)
-#: Racetrack half-width drawn for a support orbit (~2 NM) -- purely a visual cue.
-SUPPORT_ORBIT_RADIUS_M = 3704.0
+#: Floor for a drawn orbit half-width (~2 NM); below this the capsule is not
+#: readable at map zoom. Also the fixed width for a CAP station, which is a
+#: station marker -- a CAP chases contacts and no capsule can contain it.
+SUPPORT_ORBIT_MIN_RADIUS_M = 3704.0
+#: A tanker/AEW&C box is sized off the flight's own orbit speed instead. The AI
+#: turns shallow at the end of the leg and overshoots the end waypoint before
+#: rolling in, so the fixed 2 NM capsule left the aircraft outside its own box
+#: for about half the time on station (test 36: the two KC-135s ran 17.7 and
+#: 19.0 km off the leg centreline, the E-3A 13.8, the E-2C 8.9). A 20-degree
+#: turn radius plus 3 NM covers all four.
+SUPPORT_ORBIT_TURN_BANK_DEG = 20.0
+SUPPORT_ORBIT_TURN_PAD_M = 5556.0
 
 
 class DrawingsGenerator:
@@ -151,6 +161,17 @@ class DrawingsGenerator:
         return start, end
 
     @staticmethod
+    def _support_orbit_radius(flight: "FlightData") -> float:
+        """Half-width of the drawn capsule, from the flight's own orbit speed."""
+        from game.ato.flightplans.tacticaloverlay import orbit_radius
+
+        speed = getattr(flight, "patrol_speed", None)
+        if speed is None:
+            return SUPPORT_ORBIT_MIN_RADIUS_M
+        turn = orbit_radius(speed, SUPPORT_ORBIT_TURN_BANK_DEG).meters
+        return max(SUPPORT_ORBIT_MIN_RADIUS_M, turn + SUPPORT_ORBIT_TURN_PAD_M)
+
+    @staticmethod
     def _support_label(flight: "FlightData", info: object) -> str:
         """Callsign · type on line 1; radio freq · TACAN on line 2 (if known)."""
         label = f"{flight.callsign}  {flight.aircraft_type.display_name}"
@@ -188,10 +209,11 @@ class DrawingsGenerator:
             start, end = self._racetrack_ends(flight)
             if start is None or end is None:
                 continue
+            radius = self._support_orbit_radius(flight)
             if start.distance_to_point(end) < 1.0:
                 shape = self.player_layer.add_circle(
                     start,
-                    SUPPORT_ORBIT_RADIUS_M,
+                    radius,
                     line_thickness=6,
                     color=SUPPORT_ORBIT_LINE,
                     fill=SUPPORT_ORBIT_FILL,
@@ -201,7 +223,7 @@ class DrawingsGenerator:
                 shape = self.player_layer.add_oblong(
                     start,
                     end,
-                    SUPPORT_ORBIT_RADIUS_M,
+                    radius,
                     line_thickness=6,
                     color=SUPPORT_ORBIT_LINE,
                     fill=SUPPORT_ORBIT_FILL,
@@ -229,11 +251,14 @@ class DrawingsGenerator:
         assert self.mission_data is not None
         from game.missiongenerator.dtc.common import dedupe_stations, raw_cap_tracks
 
+        # Two stations can share a callsign, and MIST indexes drawings BY NAME --
+        # it logs "already exists in DB" and drops every repeat. Number them.
+        used: dict[str, int] = {}
         for station in dedupe_stations(raw_cap_tracks(self.mission_data)):
             if station.start.distance_to_point(station.end) < 1.0:
                 shape = self.player_layer.add_circle(
                     station.start,
-                    SUPPORT_ORBIT_RADIUS_M,
+                    SUPPORT_ORBIT_MIN_RADIUS_M,
                     line_thickness=3,
                     color=SUPPORT_ORBIT_LINE,
                     line_style=LineStyle.Dash,
@@ -242,20 +267,23 @@ class DrawingsGenerator:
                 shape = self.player_layer.add_oblong(
                     station.start,
                     station.end,
-                    SUPPORT_ORBIT_RADIUS_M,
+                    SUPPORT_ORBIT_MIN_RADIUS_M,
                     line_thickness=3,
                     color=SUPPORT_ORBIT_LINE,
                     line_style=LineStyle.Dash,
                 )
-            shape.name = f"CAP {station.callsign} orbit"
+            seen = used.get(station.callsign, 0) + 1
+            used[station.callsign] = seen
+            name = station.callsign if seen == 1 else f"{station.callsign} {seen}"
+            shape.name = f"CAP {name} orbit"
             label = self.player_layer.add_text_box(
                 station.start,
-                f"CAP {station.callsign}",
+                f"CAP {name}",
                 color=SUPPORT_LABEL_TEXT,
                 fill=SUPPORT_LABEL_FILL,
                 font_size=12,
             )
-            label.name = f"CAP {station.callsign} label"
+            label.name = f"CAP {name} label"
 
     def generate(self) -> None:
         self.generate_frontlines_drawing()

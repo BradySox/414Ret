@@ -356,6 +356,20 @@ REMOVED: tuple[Removed, ...] = (
         r"Flight Control ATC|`flightcontrol`",
         allow=("retired", "removed", "no longer"),
     ),
+    Removed(
+        # S64's deck cap. Not a bare "16 parking": the Supercarrier guide's spot count
+        # is still a true fact about the boat.
+        "carrier deck cap (S64)",
+        "2026-09-18",
+        r"CARRIER_DECK_SPAWN_SPOTS|deck fills to its 16|rest start airborne",
+        allow=("removed", "no longer", "historical"),
+    ),
+    Removed(
+        "Tomcat deck spawn delay (S64)",
+        "2026-09-18",
+        r"deck_placement_delay|spawn a second behind",
+        allow=("removed", "no longer", "historical"),
+    ),
 )
 
 

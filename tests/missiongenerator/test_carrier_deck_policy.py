@@ -14,9 +14,6 @@ that lever:
   it spawns uncontrolled like its airfield counterpart, with only the
   one-second placement activation, and the StartCommand holds the AI members
   to the planned push.
-* Tomcats spawn a second behind every other carrier group: DCS hands out deck
-  spots in spawn order and the port-quarter pair is the first it offers an
-  F-14 once the six-pack is closed, so the smaller jets take those first.
 * Single player ignores "Spawn player flights immediately": with fewer than
   two player slots in the mission (the same predicate that assigns Player
   rather than Client skill) there is no slot list to keep selectable, so the
@@ -84,13 +81,11 @@ def make_flight(
     is_fleet: bool,
     state: Any,
     start_type: StartType = StartType.COLD,
-    unit_id: str = "FA-18C_hornet",
 ) -> Any:
     return SimpleNamespace(
         client_count=client_count,
         state=state,
         start_type=start_type,
-        unit_type=SimpleNamespace(dcs_unit_type=SimpleNamespace(id=unit_id)),
         departure=SimpleNamespace(is_fleet=is_fleet, dcs_airport=None),
         flight_plan=SimpleNamespace(takeoff_time=lambda: None),
     )
@@ -367,75 +362,3 @@ def test_single_player_ai_flights_keep_the_normal_delay_paths() -> None:
     assert group.uncontrolled
     assert not group.late_activation
     assert startup_delays(mission) == [2700]
-
-
-def test_ai_tomcat_spawns_behind_the_other_deck_groups() -> None:
-    flight = make_flight(
-        client_count=0, is_fleet=True, state=FakeGroundState(), unit_id="F-14B"
-    )
-    group, mission = run_set_takeoff_time(
-        flight, settings_with(CarrierDeckPolicy.LAST_RESORT)
-    )
-    assert group.late_activation
-    assert activation_delays(mission) == [2]
-
-
-def test_tomcat_zero_hold_is_floored_at_its_own_placement_delay() -> None:
-    flight = make_flight(
-        client_count=0,
-        is_fleet=True,
-        state=FakeWaiting(timedelta()),
-        unit_id="F-14A-135-GR",
-    )
-    _, mission = run_set_takeoff_time(
-        flight, settings_with(CarrierDeckPolicy.LAST_RESORT)
-    )
-    assert activation_delays(mission) == [2]
-
-
-def test_client_tomcat_last_resort_spawns_behind_the_other_deck_groups() -> None:
-    flight = make_flight(
-        client_count=2, is_fleet=True, state=FakeGroundState(), unit_id="F-14BU"
-    )
-    group, mission = run_set_takeoff_time(
-        flight, settings_with(CarrierDeckPolicy.LAST_RESORT)
-    )
-    assert group.late_activation
-    assert activation_delays(mission) == [2]
-
-
-def test_client_tomcat_sixpack_first_still_joins_the_mission_start_fill() -> None:
-    flight = make_flight(
-        client_count=2, is_fleet=True, state=FakeGroundState(), unit_id="F-14B"
-    )
-    group, mission = run_set_takeoff_time(
-        flight, settings_with(CarrierDeckPolicy.SIXPACK_FIRST)
-    )
-    assert not group.late_activation
-    assert activation_delays(mission) == []
-
-
-def test_delayed_client_tomcat_takes_only_its_placement_delay() -> None:
-    flight = make_flight(
-        client_count=2,
-        is_fleet=True,
-        state=FakeWaiting(timedelta(minutes=20)),
-        unit_id="F-14B",
-    )
-    group, mission = run_set_takeoff_time(
-        flight, settings_with(CarrierDeckPolicy.LAST_RESORT, never_delay=False)
-    )
-    assert group.uncontrolled
-    assert startup_delays(mission) == [1200]
-    assert activation_delays(mission) == [2]
-
-
-def test_airfield_tomcat_is_untouched() -> None:
-    flight = make_flight(
-        client_count=0, is_fleet=False, state=FakeGroundState(), unit_id="F-14B"
-    )
-    group, mission = run_set_takeoff_time(
-        flight, settings_with(CarrierDeckPolicy.LAST_RESORT)
-    )
-    assert not group.late_activation
-    assert activation_delays(mission) == []

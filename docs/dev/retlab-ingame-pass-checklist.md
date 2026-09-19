@@ -256,7 +256,7 @@ no evidence either way after 33 missions.
 
 ## Outstanding rows at a glance
 
-82 rows need a live pass. Full detail is under each `###` heading below —
+81 rows need a live pass. Full detail is under each `###` heading below —
 search the row id. `☐` untested · `◐` flown but not under the conditions that
 stress it · `✗` fail signature reproduced in-game.
 
@@ -297,7 +297,6 @@ stress it · `✗` fail signature reproduced in-game.
 | B123 | An Armed Recon flight engages a gun-defended target instead of overflying the search point | §35 | ☐ |
 | B124 | A hand-fragged Harrier DEAD opens the New Flight dialog on the DEAD preset, not a stock Snakeye fit | New Flight dialog | ✗ |
 | B125 | A dynamic-slot jet spawns with the template's route, radios and loadout | §101 | ☐ |
-| B127 | A crowded carrier deck launches everything it parks, and the rest start airborne | §64 | ☐ |
 | B128 | An escort comes home when its primary never flies | §8 | ☐ |
 | B129 | A flight with fuel to spare has no tanker leg | §46-adjacent | ☐ |
 | B130 | The Viper's STPT 25 is the bullseye the kneeboard names | §74 | ☐ |
@@ -880,6 +879,10 @@ jets. See §62.
 
 ### B17 — Carrier deck spawn policy (six-pack last resort + MP slot timing) · §64 · ✗ REGRESSED (2026-09-17, test 36)
 
+**2026-09-18 — the fix is removed (DM call).** The deck cap (#1032) and the Tomcat spawn
+delay (#1020) were both taken out, so every carrier flight parks on the deck again and the
+test 36 failure below can recur on a boat fragged past its deck. Row stays ✗ REGRESSED.
+
 **2026-09-17, test 36 — the fail signature reproduced, and worse than the 2026-07-17 reading.**
 Long Road to H3 turn 2 fragged **50 aircraft in 24 groups onto one CVN-71**, all
 `TakeOffParkingHot`. **17 of 50 ever existed** in the ACMI; the deck took spawns up to t=233 s
@@ -897,7 +900,7 @@ note already names applies: exempt overflow flights at generation, because the d
 knowable. Test 9's "full deck" was 24 on CVN-72 and launched clean, so the ceiling sits between
 24 and this capture's 50; the observed placement cutoff here was 14.
 
-**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **partial, one more data point.** Test 32's six CVN-71 BARCAP Hornets activate at 1 s (the LAST_RESORT trick) and all launched; the Tomcat 2-s rule from #1020 has not generated yet (no carrier Tomcats since 09-14: test 33's CVN-62 flew Hornets only). Six-pack overflow and MP slot timing still unobserved.
+**2026-09-16, line-by-line audit against the test history (tests 1–33, session `9148a88a`)** — **partial, one more data point.** Test 32's six CVN-71 BARCAP Hornets activate at 1 s (the LAST_RESORT trick) and all launched; the Tomcat 2-s rule from #1020 (removed 2026-09-18) has not generated yet (no carrier Tomcats since 09-14: test 33's CVN-62 flew Hornets only). Six-pack overflow and MP slot timing still unobserved.
 
 **2026-09-15, test 32** — six Hornets (three BARCAP pairs), the E-2D and the A-6E tanker were on CVN-71 at T0; all six Hornets were assigned catapults and airborne inside the first four minutes, none stuck. No Tomcat on the deck, and the build predates #1020.
 
@@ -929,7 +932,6 @@ knowable. Test 9's "full deck" was 24 on CVN-72 and launched clean, so the ceili
   hull's own display name (free Stennis = CVN-74, Tarawa = LHA-1); existing saves keep their
   boat via the legacy CVN-71 fallback. Tests `tests/test_carrier_naming.py`; features doc §65.
 - **Deck over-capacity data point (2026-07-17 flown Scenic Route Merged, AI-only):** the merged campaign bases **39 fixed-wing on the one CVN-71** (16 F-14B + 23 Hornets — two carriers' wings merged onto one boat). Consequences observed in the Tacview + log: the delayed CARACAL SEAD (2-ship) + CARACAL DEAD (4-ship) packages activated on deck at t≈18 min, **never taxied, and were silently despawned by DCS's stuck-AI cleanup** 53–58 min later (whole groups removed in the same second, no crash/ejection events — the mission simply lost its SEAD and DEAD), and **3 Stennis-Escort Hornets crashed during recovery** (real CRASH events + crew ejections → the sea survivors that drove the CSAR findings). Not a §64 bug — LAST_RESORT only moves spawns off the six-pack — but the campaign-authoring lesson is a deck-capacity ceiling: a boat carrying two air wings loses its delayed packages to gridlock and its recoveries to a fouled deck. Watch both signatures (same-second group despawns of never-taxied deck jets; landing crashes with ejections at the boat) on any crowded-carrier fly.
-- **2026-09-14 — Tomcats off the port quarter (DM call, from a deck screenshot with two F-14s on the pair by the stern radome).** F-14 groups now activate at 2 s where every other carrier group takes 1 s, so the Hornets hold the port-quarter pair (SC guide spots 7/8, ship-frame (−84.5, −34) / (−96.5, −34)) before a Tomcat is placed. **Pass:** on a deck with at least four non-Tomcat jets spawning at mission start, no F-14 is parked on that pair at t=0+; Hornets there are fine. **Fail:** an F-14 on either spot at mission start, or Tomcats going to the hangar ("your flight is delayed to start") while deck spots are still free — the second means the later placement cost capacity. Does not cover a Tomcat activated at its push time later in the mission; it takes whatever is free then.
 - **Setup:** a carrier campaign with a player Hornet flight + at least two AI carrier flights (cold starts). Leave `carrier_deck_policy` on its default (Six-pack is overflow parking); set `never_delay_player_flights` OFF and give one player flight a package TOT ≥ 15 min out to exercise the MP slot fix. Generate for multiplayer, slot in, start up slowly, watch the deck.
 - **Pass:** the player jet spawns somewhere other than the six-pack (fantail/island/elevator spots); AI flights spawn elsewhere too, taxi to the cats, and launch without deadlocking on the player; the late-TOT player flight's slots are pickable from ~mission start (jet parked cold, engines off) and its AI members only crank at the planned push time; flipping the setting to "Players spawn on the six-pack" puts the player back on the six-pack.
 - **Fail signature:** the player still spawns on the six-pack under last resort (the 1s activation didn't fire — check `FlightLateActivationTrigger<gid>` exists in the miz triggers); a delayed player flight's slots missing until push time (the uncontrolled path didn't take — check the group is `uncontrolled` with a `FlightStartTrigger<gid>`); AI wingmen of the delayed flight crank at mission start (StartCommand push not holding); aircraft spawning stacked/inside each other when the deck is heavily loaded (DCS refused to overflow gracefully — fall back to exempting overflow flights at generation, we know the deck count); a client slot unenterable in MP after the 1s activation (late-activated client groups misbehaving — revert clients to spawn-at-start and accept the six-pack in that mode).
@@ -7949,7 +7951,11 @@ group stays in the slot list, so the real flight is marked and there is no clone
   answer 1 and shrinks the feature to loadout and properties.
 
 
-### B127 — A crowded carrier deck launches everything it parks, and the rest start airborne · §64 · ☐ UNTESTED
+### B127 — A crowded carrier deck launches everything it parks, and the rest start airborne · §64 · ✖ REMOVED
+
+**History:** removed 2026-09-18 with the deck cap it tested (DM call); no pass owed. The
+cap air-started every carrier flight past 16 per mission. What it taught is in features doc
+§64. Was ☐ UNTESTED.
 
 The fix for test 36's silent loss of 33 carrier aircraft (see the test 36 section). The
 deck ceiling is the Supercarrier guide's 16 parking spots; the overflow air-starts rather

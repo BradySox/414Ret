@@ -69,20 +69,6 @@ entries:
       the comm card is in the radio presets, and say which. A stock jet
       with no route means the link did not take.
     row: B125
-  - date: 2026-09-14
-    title: Tomcats no longer take the port-quarter deck spots
-    change: >-
-      DCS hands out carrier deck spots in spawn order, and the pair at the
-      stern's port corner was the first it offered an F-14 after mission
-      start. Tomcat groups now spawn a second behind every other carrier
-      group, so the Hornets hold that pair and the Tomcats are placed further
-      along the deck. Hornets and everything else park where they always did.
-    watch: >-
-      At mission start on a supercarrier, look at the two spots by the stern
-      radome on the port side: Hornets or empty, never a Tomcat. If a Tomcat
-      flight instead reports it is delayed to start while spots are still
-      free, say so.
-    row: B17
   - date: 2026-09-13
     title: Viper and Hornet steerpoints read their planned altitude again
     change: >-

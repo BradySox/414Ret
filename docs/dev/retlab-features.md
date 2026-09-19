@@ -6694,51 +6694,28 @@ start; WARM/RUNWAY/air starts take the existing full-delay late activation (taxi
 takeoff / push time). The ten-minute rule survives (a short hold still spawns at
 mission start), and AI flights and true MP missions are byte-identical.
 
-**Tomcats spawn a second behind the rest of the deck (2026-09-14, DM call):** the DM
-does not want an F-14 on the port-quarter pair — the two spots at the stern's port corner,
-by the radome (the Supercarrier guide's spots 7 and 8, p100; ship-frame (−84.5, −34) and
-(−96.5, −34) in `KNOWN_PARKING_SPOTS`). DCS hands out deck spots in spawn order, and the
-fork's own Tacview measurements record that pair as the first spots an F-14 is offered once
-the six-pack is closed (§72's spot table), while a Hornet's order runs through the
-by-the-island pair first and then the port quarter. So `deck_placement_delay()` holds the
-F-14 family (`dcs_unit_type.id` starting `F-14` — every Heatblur variant, the export
-A-95, the AI-only A and the B(U)) to a **2 s** activation where every other carrier
-group takes 1 s: by the time a Tomcat spawns, the Hornets that spawned at 1 s already hold
-those two spots, and the Tomcat is placed further along its own order. Best effort, not a
-fence: it needs at least four non-Tomcat jets spawning on the same boat at mission start
-(the by-the-island pair fills first), and a Tomcat activating at its push time later in
-the mission takes whatever is free then, port quarter included. `SIXPACK_FIRST` client
-Tomcats still spawn with the mission-start fill, where they take the six-pack, not the
-port quarter. Tests: the `*_tomcat_*` cases in `test_carrier_deck_policy.py`.
+**Removed 2026-09-18 (DM call): the deck cap (#1032) and the Tomcat spawn delay (#1020).**
+Every carrier flight parks on the deck again, and every carrier group activates 1 s after its
+start, Tomcats included. What the two taught, kept here because the code is gone:
 
-**The deck has a ceiling and generation now respects it (2026-09-17, test 36).** The ATO
-fragged **50 aircraft in 24 groups onto CVN-71**, all parking-hot. Seventeen ever existed:
-DCS placed 14, and every carrier group activating after t=281 s was dropped without a log
-line, an error or an event — 14 whole groups, 33 aircraft. Two groups launched; the rest
-sat hot on deck for the full 71 minutes. Five shore-based escorts then held their
-escort-hold anchors until the mission ended, 170–310 km inside red airspace, waiting on
-primaries that never flew. The Supercarrier Operations Guide p100 gives the number:
-*"there are 20 possible aircraft spawn locations available: the 16 parking locations
-listed below and 1 on each catapult"*, and the overflow waits on the hangar deck *"until
-a suitable parking spot is free"* — which on a deck where nothing taxis is never. Only
-the 16 take a parking start; the catapults want "Takeoff from runway hot", which nothing
-here plans.
-
-`FlightGroupSpawner` now counts what it has put on each deck (`carrier_deck_use`, owned by
-`AircraftGenerator` so the count spans the whole ATO) and **air-starts the overflow**
-rather than handing it to DCS to lose — the same last resort the airfield path already
-takes on `NoParkingSlotError`, which the carrier branch could never reach because that
-retry is gated on `isinstance(cp, Airfield)`. **Client flights are never pushed off the
-boat**: a human has to be able to slot in where the briefing says, so they take their
-spots regardless and the AI behind them absorbs the move. `CARRIER_DECK_SPAWN_SPOTS = 16`.
-
-Residual, and deliberately not modelled: the guide also says an F-14 blocks spots
-adjacent to it, so a Tomcat-heavy deck fills before 16. Test 36 stopped at 14 with eight
-Tomcats placed first, and test 9 took 24 Hornets on CVN-72 and launched them all, so the
-true number is a footprint problem, not a constant. pydcs geometry cannot express it
-(its `width` is folded/swept: the F-14 reads 10.15 m against the Hornet's 11.43). Sixteen
-is the cited figure and it removes the silent-vanish class; the last spot or two may still
-go to the hangar deck, which is what they did before.
+- **DCS drops what a full deck cannot take, silently.** Test 36 (2026-09-17) fragged 50
+  aircraft onto CVN-71. DCS placed 14 in the first 233 s and every carrier group activating
+  after t=281 s never appeared: 33 aircraft, no log line, a `state.json` record at the boat
+  reference with `alt = -1`. Five shore-based escorts then held their anchors inside red
+  airspace; the escort release backstop (§8) stays.
+- **The cap was 16 per mission, not 16 at once.** It air-started every flight after the
+  first 16 however long the deck had been clear: brady turn 3 parked 15 of CVN-71's 53.
+- **A deck does clear.** Tests 9 and 32 relaunched from the deck through the mission and
+  every jet launched. Test 36's jam was a Tomcat pile-up: 8 F-14Bs parked in 2 s, 12 in
+  233 s, 3 ever launched. Tests 9 and 32 never parked more than 4 Tomcats together.
+- **Carrier launches run late.** The plan allows 2.5 min from spawn to wheels-up. Across
+  23 flown groups the median was 4.5 min; busy 4-ships took 6–9 and test 9's crowded
+  Tomcats 20 or more. Air starts are always on time.
+- **The Tomcat delay** held F-14s to a 2 s activation so the Hornets took the port-quarter
+  pair first (the DM did not want a Tomcat there). Best effort only: it needed four
+  non-Tomcat jets spawning at mission start.
+- A time-aware count (the deck counted as it empties, whole packages, at most 4 Tomcats:
+  #1036) was built and dropped the same day over missed TOTs.
 
 **Wiring**: `waypointgenerator.set_takeoff_time` split into the hold delay (the
 WaitingForStart remaining) and `needs_deck_placement_delay()` (carrier COLD/WARM ground
@@ -6754,8 +6731,7 @@ AI placement/push-time activation + the zero-hold floor, client placement under 
 policies, the delayed-client uncontrolled+StartCommand+placement combo, warm
 late-activation parity, airfield/runway no-ops, and the single-player matrix —
 cold/warm/runway late activation at the planned start time, the ten-minute rule, the
-MP + AI no-changes), `tests/missiongenerator/test_carrier_deck_capacity.py` (the deck
-ceiling, the client exemption, per-boat counting) and
+MP + AI no-changes) and
 `tests/settings/test_carrier_deck_policy.py` (default, boolean→enum migration both
 ways, never-stomp, UI visibility).
 
